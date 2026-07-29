@@ -3,6 +3,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
+const path = require('path'); // 👈 ADD THIS
 
 const chatRoutes = require('./routes/chat');
 const leadRoutes = require('./routes/lead');
@@ -12,7 +13,14 @@ const whatsappWebhook = require('./routes/whatsappWebhook');
 const app = express();
 app.use(cors());
 app.use(bodyParser.json());
-app.use(express.static('public')); // 👈 ADD THIS
+
+// Serve static files from the 'public' folder (absolute path)
+app.use(express.static(path.join(__dirname, 'public')));
+
+// Explicit route for widget.js (ensures it's served)
+app.get('/widget.js', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'widget.js'));
+});
 
 // Routes
 app.use('/api/chat', chatRoutes);
@@ -20,9 +28,9 @@ app.use('/api/lead', leadRoutes);
 app.use('/api/appointment', appointmentRoutes);
 app.use('/webhook/whatsapp', whatsappWebhook);
 
-// 👇 ADD THIS ROOT ROUTE
+// Root route – send index.html
 app.get('/', (req, res) => {
-  res.sendFile(__dirname + '/public/index.html');
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 // Health check
