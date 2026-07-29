@@ -1,6 +1,6 @@
 // public/widget.js
 (function() {
-  const API_BASE = window.CHAT_API_BASE || 'https://your-backend.com/api'; // Change to your actual backend URL
+  const API_BASE = window.CHAT_API_BASE || '/api';
 
   // Create floating button
   const btn = document.createElement('div');
