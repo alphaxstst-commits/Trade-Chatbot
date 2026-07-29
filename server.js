@@ -12,13 +12,18 @@ const whatsappWebhook = require('./routes/whatsappWebhook');
 const app = express();
 app.use(cors());
 app.use(bodyParser.json());
-app.use(express.static('public'));
+app.use(express.static('public')); // 👈 ADD THIS
 
 // Routes
 app.use('/api/chat', chatRoutes);
 app.use('/api/lead', leadRoutes);
 app.use('/api/appointment', appointmentRoutes);
 app.use('/webhook/whatsapp', whatsappWebhook);
+
+// 👇 ADD THIS ROOT ROUTE
+app.get('/', (req, res) => {
+  res.sendFile(__dirname + '/public/index.html');
+});
 
 // Health check
 app.get('/health', (req, res) => res.send('OK'));
