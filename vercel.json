@@ -11,21 +11,5 @@
       "src": "/(.*)",
       "dest": "server.js"
     }
-  ],
-  "env": {
-    "OPENROUTER_API_KEY": "@openrouter_api_key",
-    "OPENROUTER_MODEL": "@openrouter_model",
-    "PUBLIC_SITE_URL": "@public_site_url",
-    "GOOGLE_CLIENT_EMAIL": "@google_client_email",
-    "GOOGLE_PRIVATE_KEY": "@google_private_key",
-    "LEADS_SHEET_ID": "@leads_sheet_id",
-    "APPOINTMENTS_SHEET_ID": "@appointments_sheet_id",
-    "GMAIL_USER": "@gmail_user",
-    "GMAIL_APP_PASSWORD": "@gmail_app_password",
-    "EMAIL_FROM": "@email_from",
-    "NOTIFY_EMAIL_TO": "@notify_email_to",
-    "WHATSAPP_ACCESS_TOKEN": "@whatsapp_access_token",
-    "WHATSAPP_PHONE_NUMBER_ID": "@whatsapp_phone_number_id",
-    "WHATSAPP_VERIFY_TOKEN": "@whatsapp_verify_token"
-  }
+  ]
 }
