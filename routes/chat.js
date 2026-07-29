@@ -6,11 +6,18 @@ const { askAI } = require('../services/openrouter');
 router.post('/', async (req, res) => {
   try {
     const { message, history = [] } = req.body;
+    if (!message) {
+      return res.status(400).json({ error: 'Message is required' });
+    }
     const reply = await askAI(message, history);
     res.json({ reply });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'AI failed' });
+    console.error('Chat error:', err.message);
+    console.error(err.stack);
+    res.status(500).json({ 
+      error: 'AI failed', 
+      details: err.message 
+    });
   }
 });
 
