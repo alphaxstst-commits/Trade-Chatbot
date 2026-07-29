@@ -2,7 +2,7 @@
 (function() {
   const API_BASE = window.CHAT_API_BASE || '/api';
 
-  // Floating button – gradient neon glow
+  // Create floating button – gradient neon glow
   const btn = document.createElement('div');
   btn.id = 'chat-widget-toggle';
   btn.innerHTML = '💬';
@@ -128,7 +128,117 @@
     </div>
   `;
 
-  // ... rest of the JavaScript (event listeners, sendMessage, booking) remains the same as before.
-  // I'll include it below for completeness.
-  // But to save space, I'll refer to the previous version – just copy from the earlier widget.js.
-  // (The dark version only changes styling, not logic.)
+  // DOM refs
+  const messagesDiv = document.getElementById('chat-messages');
+  const input = document.getElementById('chat-input');
+  const sendBtn = document.getElementById('chat-send');
+  const closeBtn = document.getElementById('chat-close');
+  const bookBtn = document.getElementById('chat-book');
+  const bookingForm = document.getElementById('booking-form');
+  const bookSubmit = document.getElementById('book-submit');
+  const bookCancel = document.getElementById('book-cancel');
+
+  // Toggle chat
+  btn.addEventListener('click', () => {
+    if (chatWindow.style.display === 'flex') {
+      chatWindow.style.display = 'none';
+    } else {
+      chatWindow.style.display = 'flex';
+      if (messagesDiv.children.length === 0) {
+        addMessage('system', 'Hi! How can I help you with plumbing, HVAC, excavation, or land clearing?');
+      }
+      bookingForm.style.display = 'none';
+    }
+  });
+  closeBtn.addEventListener('click', () => chatWindow.style.display = 'none');
+
+  // Book toggle
+  bookBtn.addEventListener('click', () => {
+    bookingForm.style.display = bookingForm.style.display === 'none' ? 'block' : 'none';
+  });
+
+  // Add message
+  function addMessage(type, text) {
+    const div = document.createElement('div');
+    div.className = `chat-message ${type}`;
+    div.textContent = text;
+    messagesDiv.appendChild(div);
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+  }
+
+  // Send message to AI
+  async function sendMessage() {
+    const text = input.value.trim();
+    if (!text) return;
+    addMessage('user', text);
+    input.value = '';
+    input.disabled = true;
+    sendBtn.disabled = true;
+
+    try {
+      const res = await fetch(`${API_BASE}/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: text, history: [] }),
+      });
+      const data = await res.json();
+      if (data.reply) {
+        addMessage('ai', data.reply);
+      } else {
+        addMessage('error', data.error || 'No response from AI.');
+      }
+    } catch (e) {
+      addMessage('error', 'Error connecting to server. Please try again.');
+    }
+    input.disabled = false;
+    sendBtn.disabled = false;
+    input.focus();
+  }
+
+  sendBtn.addEventListener('click', sendMessage);
+  input.addEventListener('keydown', (e) => { if (e.key === 'Enter') sendMessage(); });
+
+  // Booking form submit
+  bookSubmit.addEventListener('click', async () => {
+    const name = document.getElementById('book-name').value.trim();
+    const phone = document.getElementById('book-phone').value.trim();
+    const email = document.getElementById('book-email').value.trim();
+    const service = document.getElementById('book-service').value;
+    const date = document.getElementById('book-date').value;
+    const time = document.getElementById('book-time').value;
+    const notes = document.getElementById('book-notes').value.trim();
+
+    if (!name || !phone || !email || !service || !date || !time) {
+      addMessage('system', 'Please fill in all required fields.');
+      return;
+    }
+
+    try {
+      const res = await fetch(`${API_BASE}/appointment`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, phone, email, service, date, time, notes }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        addMessage('system', 'Appointment booked! Check your email for confirmation.');
+        bookingForm.style.display = 'none';
+        document.getElementById('book-name').value = '';
+        document.getElementById('book-phone').value = '';
+        document.getElementById('book-email').value = '';
+        document.getElementById('book-service').value = '';
+        document.getElementById('book-date').value = '';
+        document.getElementById('book-time').value = '';
+        document.getElementById('book-notes').value = '';
+      } else {
+        addMessage('error', 'Failed to book. Please try again.');
+      }
+    } catch (e) {
+      addMessage('error', 'Error booking appointment.');
+    }
+  });
+
+  bookCancel.addEventListener('click', () => {
+    bookingForm.style.display = 'none';
+  });
+})();
