@@ -1,4 +1,4 @@
-// public/widget.js – Dark Blue Gradient Theme
+// public/widget.js – Dark Blue Gradient Theme with Mobile Responsiveness
 (function() {
   const API_BASE = window.CHAT_API_BASE || '/api';
 
@@ -31,7 +31,8 @@
   chatWindow.id = 'chat-widget-window';
   chatWindow.style.cssText = `
     position: fixed; bottom: 100px; right: 24px;
-    width: 400px; max-width: 92vw; height: 560px;
+    width: 400px; max-width: calc(100vw - 48px);
+    height: 560px; max-height: calc(100vh - 140px);
     background: rgba(15, 23, 42, 0.95);
     backdrop-filter: blur(16px);
     border-radius: 24px;
@@ -44,7 +45,7 @@
   `;
   document.body.appendChild(chatWindow);
 
-  // Animations
+  // Global styles + animations + mobile overrides
   const style = document.createElement('style');
   style.textContent = `
     @keyframes slideUpBlue {
@@ -110,6 +111,27 @@
     .chat-input::placeholder {
       color: #64748b;
     }
+
+    /* Mobile responsiveness */
+    @media (max-width: 480px) {
+      #chat-widget-window {
+        bottom: 80px !important;
+        right: 12px !important;
+        left: 12px !important;
+        width: auto !important;
+        max-width: none !important;
+        height: 60vh !important;
+        max-height: 70vh !important;
+        border-radius: 16px !important;
+      }
+      #chat-widget-toggle {
+        width: 56px !important;
+        height: 56px !important;
+        font-size: 26px !important;
+        bottom: 16px !important;
+        right: 16px !important;
+      }
+    }
   `;
   document.head.appendChild(style);
 
@@ -148,7 +170,7 @@
     </div>
   `;
 
-  // ---------- All the JavaScript logic (unchanged) ----------
+  // ---------- JavaScript logic ----------
   const messagesDiv = document.getElementById('chat-messages');
   const input = document.getElementById('chat-input');
   const sendBtn = document.getElementById('chat-send');
