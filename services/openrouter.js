@@ -1,5 +1,12 @@
 const axios = require('axios');
-const businessScript = require('../knowledge/businessScript');
+
+// Minimal business script (in case the file fails to load)
+let businessScript = "You are a helpful assistant for a contracting company.";
+try {
+  businessScript = require('../knowledge/businessScript');
+} catch (e) {
+  console.warn('Failed to load businessScript, using fallback.');
+}
 
 async function askAI(userMessage, conversationHistory = []) {
   const messages = [
@@ -8,39 +15,39 @@ async function askAI(userMessage, conversationHistory = []) {
     { role: 'user', content: userMessage }
   ];
 
+  const model = process.env.OPENROUTER_MODEL || 'meta-llama/llama-3-8b-instruct:free';
+  const apiKey = process.env.OPENROUTER_API_KEY;
+
+  if (!apiKey) {
+    console.error('OPENROUTER_API_KEY is missing!');
+    return "We're experiencing technical difficulties. Please call our office for immediate assistance.";
+  }
+
   try {
     const response = await axios.post(
       'https://openrouter.ai/api/v1/chat/completions',
       {
-        model: process.env.OPENROUTER_MODEL || 'meta-llama/llama-3-8b-instruct:free',
+        model,
         messages,
         temperature: 0.3,
-        max_tokens: 500,
+        max_tokens: 400,
       },
       {
         headers: {
-          'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
+          'Authorization': `Bearer ${apiKey}`,
           'Content-Type': 'application/json',
         },
-        timeout: 10000,
+        timeout: 8000,
       }
     );
 
-    let reply = response.data.choices[0].message.content;
+    let reply = response.data.choices[0].message.content || '';
 
-    // Aggressive cleanup: remove all markdown and special characters
-    reply = reply.replace(/\*\*/g, '');        // bold
-    reply = reply.replace(/\*/g, '');          // italic / bullet
-    reply = reply.replace(/\_\_/g, '');        // underline
-    reply = reply.replace(/\_/g, '');          // underscore
-    reply = reply.replace(/`/g, '');           // code
-    reply = reply.replace(/#{1,6}\s/g, '');    // headings
-    reply = reply.replace(/^[\*\-]\s/gm, '');  // bullet list markers
-    reply = reply.replace(/\n{3,}/g, '\n\n');  // excessive newlines
-    // Remove any remaining asterisks or underscores (just in case)
-    reply = reply.replace(/[*_]/g, '');
+    // Strip all markdown characters
+    reply = reply.replace(/[*_`#]/g, '');
+    reply = reply.replace(/\n{2,}/g, '\n\n');
 
-    return reply.trim();
+    return reply.trim() || "I'm sorry, I couldn't generate a response. Please try again.";
   } catch (error) {
     console.error('OpenRouter error:', error.response?.data || error.message);
     return "I apologize, but I'm having trouble connecting right now. Please call our office at (555) 123-4567 for immediate assistance, or try again in a moment.";
