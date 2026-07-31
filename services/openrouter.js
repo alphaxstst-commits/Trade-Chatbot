@@ -1,6 +1,5 @@
 const axios = require('axios');
 
-// Minimal business script (in case the file fails to load)
 let businessScript = "You are a helpful assistant for a contracting company.";
 try {
   businessScript = require('../knowledge/businessScript');
@@ -30,20 +29,20 @@ async function askAI(userMessage, conversationHistory = []) {
         model,
         messages,
         temperature: 0.3,
-        max_tokens: 400,
+        max_tokens: 150, // Reduced from 400 to speed up responses
       },
       {
         headers: {
           'Authorization': `Bearer ${apiKey}`,
           'Content-Type': 'application/json',
         },
-        timeout: 8000,
+        timeout: 6000, // Slightly shorter timeout
       }
     );
 
     let reply = response.data.choices[0].message.content || '';
 
-    // Strip all markdown characters
+    // Strip markdown
     reply = reply.replace(/[*_`#]/g, '');
     reply = reply.replace(/\n{2,}/g, '\n\n');
 
