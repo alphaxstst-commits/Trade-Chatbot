@@ -1,4 +1,4 @@
-// public/widget.js – Responsive Dark Blue Theme
+// public/widget.js – Fully responsive with scrollable booking form
 (function() {
   const API_BASE = window.CHAT_API_BASE || '/api';
 
@@ -40,14 +40,15 @@
     border-radius: 24px;
     box-shadow: 0 16px 48px rgba(0,0,0,0.7);
     display: none; flex-direction: column;
-    overflow: hidden; z-index: 9999;
+    overflow: hidden;
+    z-index: 9999;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     border: 1px solid rgba(59, 130, 246, 0.25);
     animation: slideUpBlue 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   `;
   document.body.appendChild(chatWindow);
 
-  // Styles + animations + responsive overrides
+  // Styles
   const style = document.createElement('style');
   style.textContent = `
     @keyframes slideUpBlue {
@@ -113,8 +114,20 @@
     .chat-input::placeholder {
       color: #64748b;
     }
+    /* Booking form scroll container */
+    .booking-scroll {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0 4px;
+    }
+    .booking-scroll::-webkit-scrollbar {
+      width: 3px;
+    }
+    .booking-scroll::-webkit-scrollbar-thumb {
+      background: rgba(59,130,246,0.3);
+      border-radius: 8px;
+    }
 
-    /* 📱 Mobile Responsiveness */
     @media (max-width: 480px) {
       #chat-widget-window {
         bottom: 80px !important;
@@ -141,7 +154,7 @@
   `;
   document.head.appendChild(style);
 
-  // Chat HTML (unchanged, but included for completeness)
+  // Chat HTML – booking form wrapped in a scrollable div
   chatWindow.innerHTML = `
     <div style="background: rgba(30,58,138,0.3); backdrop-filter: blur(4px); padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(59,130,246,0.15); flex-shrink:0;">
       <span style="font-weight:600; font-size:18px; background: linear-gradient(135deg, #60a5fa, #3b82f6); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Summit Trades AI</span>
@@ -155,28 +168,30 @@
       <input id="chat-input" class="chat-input" type="text" placeholder="Ask about plumbing, HVAC...">
       <button id="chat-send" style="background: linear-gradient(135deg, #1e3a8a, #3b82f6); color:white; border:none; border-radius:50%; width:44px; height:44px; cursor:pointer; font-size:20px; box-shadow:0 2px 12px rgba(59,130,246,0.3);">➤</button>
     </div>
-    <div id="booking-form" style="display:none; padding:20px; background: rgba(0,0,0,0.4); border-top:1px solid rgba(59,130,246,0.1); flex-shrink:0;">
-      <h4 style="margin:0 0 12px; color:#e2e8f0; font-weight:500;">Book Appointment</h4>
-      <input id="book-name" placeholder="Full Name" style="width:100%; padding:10px; margin-bottom:8px; border:none; border-radius:8px; background: rgba(255,255,255,0.04); color:#e2e8f0; border:1px solid rgba(59,130,246,0.15);">
-      <input id="book-phone" placeholder="Phone" style="width:100%; padding:10px; margin-bottom:8px; border:none; border-radius:8px; background: rgba(255,255,255,0.04); color:#e2e8f0; border:1px solid rgba(59,130,246,0.15);">
-      <input id="book-email" placeholder="Email" style="width:100%; padding:10px; margin-bottom:8px; border:none; border-radius:8px; background: rgba(255,255,255,0.04); color:#e2e8f0; border:1px solid rgba(59,130,246,0.15);">
-      <select id="book-service" style="width:100%; padding:10px; margin-bottom:8px; border:none; border-radius:8px; background: rgba(255,255,255,0.04); color:#e2e8f0; border:1px solid rgba(59,130,246,0.15);">
-        <option value="">Select Service</option>
-        <option>Plumbing</option>
-        <option>HVAC</option>
-        <option>Excavation</option>
-        <option>Earthwork</option>
-        <option>Mulching</option>
-      </select>
-      <input id="book-date" type="date" style="width:100%; padding:10px; margin-bottom:8px; border:none; border-radius:8px; background: rgba(255,255,255,0.04); color:#e2e8f0; border:1px solid rgba(59,130,246,0.15);">
-      <input id="book-time" type="time" style="width:100%; padding:10px; margin-bottom:8px; border:none; border-radius:8px; background: rgba(255,255,255,0.04); color:#e2e8f0; border:1px solid rgba(59,130,246,0.15);">
-      <textarea id="book-notes" placeholder="Notes" style="width:100%; padding:10px; margin-bottom:8px; border:none; border-radius:8px; background: rgba(255,255,255,0.04); color:#e2e8f0; border:1px solid rgba(59,130,246,0.15); height:50px;"></textarea>
-      <button id="book-submit" style="background: linear-gradient(135deg, #1e3a8a, #3b82f6); color:white; border:none; padding:10px; border-radius:8px; cursor:pointer; width:100%; font-weight:600;">Submit</button>
-      <button id="book-cancel" style="background: rgba(255,255,255,0.04); color:#94a3b8; border:none; padding:10px; border-radius:8px; cursor:pointer; width:100%; margin-top:8px;">Cancel</button>
+    <div id="booking-form" style="display:none; flex-direction:column; background: rgba(0,0,0,0.4); border-top:1px solid rgba(59,130,246,0.1); flex-shrink:0; max-height:60%; overflow:hidden;">
+      <div class="booking-scroll" style="padding:16px 20px;">
+        <h4 style="margin:0 0 12px; color:#e2e8f0; font-weight:500;">Book Appointment</h4>
+        <input id="book-name" placeholder="Full Name" style="width:100%; padding:10px; margin-bottom:8px; border:none; border-radius:8px; background: rgba(255,255,255,0.04); color:#e2e8f0; border:1px solid rgba(59,130,246,0.15); box-sizing:border-box;">
+        <input id="book-phone" placeholder="Phone" style="width:100%; padding:10px; margin-bottom:8px; border:none; border-radius:8px; background: rgba(255,255,255,0.04); color:#e2e8f0; border:1px solid rgba(59,130,246,0.15); box-sizing:border-box;">
+        <input id="book-email" placeholder="Email" style="width:100%; padding:10px; margin-bottom:8px; border:none; border-radius:8px; background: rgba(255,255,255,0.04); color:#e2e8f0; border:1px solid rgba(59,130,246,0.15); box-sizing:border-box;">
+        <select id="book-service" style="width:100%; padding:10px; margin-bottom:8px; border:none; border-radius:8px; background: rgba(255,255,255,0.04); color:#e2e8f0; border:1px solid rgba(59,130,246,0.15); box-sizing:border-box;">
+          <option value="">Select Service</option>
+          <option>Plumbing</option>
+          <option>HVAC</option>
+          <option>Excavation</option>
+          <option>Earthwork</option>
+          <option>Mulching</option>
+        </select>
+        <input id="book-date" type="date" style="width:100%; padding:10px; margin-bottom:8px; border:none; border-radius:8px; background: rgba(255,255,255,0.04); color:#e2e8f0; border:1px solid rgba(59,130,246,0.15); box-sizing:border-box;">
+        <input id="book-time" type="time" style="width:100%; padding:10px; margin-bottom:8px; border:none; border-radius:8px; background: rgba(255,255,255,0.04); color:#e2e8f0; border:1px solid rgba(59,130,246,0.15); box-sizing:border-box;">
+        <textarea id="book-notes" placeholder="Notes" style="width:100%; padding:10px; margin-bottom:8px; border:none; border-radius:8px; background: rgba(255,255,255,0.04); color:#e2e8f0; border:1px solid rgba(59,130,246,0.15); height:50px; box-sizing:border-box;"></textarea>
+        <button id="book-submit" style="background: linear-gradient(135deg, #1e3a8a, #3b82f6); color:white; border:none; padding:10px; border-radius:8px; cursor:pointer; width:100%; font-weight:600;">Submit</button>
+        <button id="book-cancel" style="background: rgba(255,255,255,0.04); color:#94a3b8; border:none; padding:10px; border-radius:8px; cursor:pointer; width:100%; margin-top:8px;">Cancel</button>
+      </div>
     </div>
   `;
 
-  // ----- JavaScript logic (unchanged, but included) -----
+  // ---------- JavaScript logic ----------
   const messagesDiv = document.getElementById('chat-messages');
   const input = document.getElementById('chat-input');
   const sendBtn = document.getElementById('chat-send');
@@ -200,7 +215,11 @@
   closeBtn.addEventListener('click', () => chatWindow.style.display = 'none');
 
   bookBtn.addEventListener('click', () => {
-    bookingForm.style.display = bookingForm.style.display === 'none' ? 'block' : 'none';
+    if (bookingForm.style.display === 'none') {
+      bookingForm.style.display = 'flex';
+    } else {
+      bookingForm.style.display = 'none';
+    }
   });
 
   function addMessage(type, text) {
