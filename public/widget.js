@@ -1,8 +1,8 @@
-// public/widget.js – Dark Blue Gradient Theme with Mobile Responsiveness
+// public/widget.js – Responsive Dark Blue Theme
 (function() {
   const API_BASE = window.CHAT_API_BASE || '/api';
 
-  // Floating button – blue glow
+  // Floating button
   const btn = document.createElement('div');
   btn.id = 'chat-widget-toggle';
   btn.innerHTML = '💬';
@@ -26,13 +26,15 @@
   };
   document.body.appendChild(btn);
 
-  // Chat window – glass dark blue
+  // Chat window
   const chatWindow = document.createElement('div');
   chatWindow.id = 'chat-widget-window';
   chatWindow.style.cssText = `
     position: fixed; bottom: 100px; right: 24px;
-    width: 400px; max-width: calc(100vw - 48px);
-    height: 560px; max-height: calc(100vh - 140px);
+    width: 400px;
+    max-width: calc(100vw - 48px);
+    height: 560px;
+    max-height: calc(100vh - 140px);
     background: rgba(15, 23, 42, 0.95);
     backdrop-filter: blur(16px);
     border-radius: 24px;
@@ -45,7 +47,7 @@
   `;
   document.body.appendChild(chatWindow);
 
-  // Global styles + animations + mobile overrides
+  // Styles + animations + responsive overrides
   const style = document.createElement('style');
   style.textContent = `
     @keyframes slideUpBlue {
@@ -112,7 +114,7 @@
       color: #64748b;
     }
 
-    /* Mobile responsiveness */
+    /* 📱 Mobile Responsiveness */
     @media (max-width: 480px) {
       #chat-widget-window {
         bottom: 80px !important;
@@ -131,23 +133,27 @@
         bottom: 16px !important;
         right: 16px !important;
       }
+      .chat-message {
+        font-size: 13px !important;
+        padding: 8px 12px !important;
+      }
     }
   `;
   document.head.appendChild(style);
 
-  // Chat window HTML
+  // Chat HTML (unchanged, but included for completeness)
   chatWindow.innerHTML = `
     <div style="background: rgba(30,58,138,0.3); backdrop-filter: blur(4px); padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(59,130,246,0.15); flex-shrink:0;">
       <span style="font-weight:600; font-size:18px; background: linear-gradient(135deg, #60a5fa, #3b82f6); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Summit Trades AI</span>
       <div style="display:flex; gap:12px; align-items:center;">
-        <span id="chat-book" style="cursor:pointer; font-size:13px; background: rgba(59,130,246,0.15); padding:6px 14px; border-radius:20px; color:#93c5fd; border:1px solid rgba(59,130,246,0.15); transition:0.2s;">📅 Book</span>
+        <span id="chat-book" style="cursor:pointer; font-size:13px; background: rgba(59,130,246,0.15); padding:6px 14px; border-radius:20px; color:#93c5fd; border:1px solid rgba(59,130,246,0.15);">📅 Book</span>
         <span id="chat-close" style="cursor:pointer; font-size:22px; color:#94a3b8; line-height:1;">✕</span>
       </div>
     </div>
     <div id="chat-messages" style="flex:1; padding:16px 12px; overflow-y:auto; display:flex; flex-direction:column; background: transparent;"></div>
     <div style="display:flex; border-top:1px solid rgba(59,130,246,0.1); padding:12px 16px; gap:10px; flex-shrink:0; background: rgba(0,0,0,0.2);">
       <input id="chat-input" class="chat-input" type="text" placeholder="Ask about plumbing, HVAC...">
-      <button id="chat-send" style="background: linear-gradient(135deg, #1e3a8a, #3b82f6); color:white; border:none; border-radius:50%; width:44px; height:44px; cursor:pointer; font-size:20px; transition:0.2s; box-shadow:0 2px 12px rgba(59,130,246,0.3);">➤</button>
+      <button id="chat-send" style="background: linear-gradient(135deg, #1e3a8a, #3b82f6); color:white; border:none; border-radius:50%; width:44px; height:44px; cursor:pointer; font-size:20px; box-shadow:0 2px 12px rgba(59,130,246,0.3);">➤</button>
     </div>
     <div id="booking-form" style="display:none; padding:20px; background: rgba(0,0,0,0.4); border-top:1px solid rgba(59,130,246,0.1); flex-shrink:0;">
       <h4 style="margin:0 0 12px; color:#e2e8f0; font-weight:500;">Book Appointment</h4>
@@ -170,7 +176,7 @@
     </div>
   `;
 
-  // ---------- JavaScript logic ----------
+  // ----- JavaScript logic (unchanged, but included) -----
   const messagesDiv = document.getElementById('chat-messages');
   const input = document.getElementById('chat-input');
   const sendBtn = document.getElementById('chat-send');
