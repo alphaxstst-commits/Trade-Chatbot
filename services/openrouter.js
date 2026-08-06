@@ -29,25 +29,23 @@ async function askAI(userMessage, conversationHistory = []) {
         model,
         messages,
         temperature: 0.3,
-        max_tokens: 150, // Reduced from 400 to speed up responses
+        max_tokens: 150,
       },
       {
         headers: {
           'Authorization': `Bearer ${apiKey}`,
           'Content-Type': 'application/json',
         },
-        timeout: 6000, // Slightly shorter timeout
+        timeout: 6000,
       }
     );
 
     let reply = response.data.choices[0].message.content || '';
-
-    // Strip markdown
     reply = reply.replace(/[*_`#]/g, '');
     reply = reply.replace(/\n{2,}/g, '\n\n');
-
     return reply.trim() || "I'm sorry, I couldn't generate a response. Please try again.";
   } catch (error) {
+    // Log the full error response for debugging
     console.error('OpenRouter error:', error.response?.data || error.message);
     return "I apologize, but I'm having trouble connecting right now. Please call our office at (555) 123-4567 for immediate assistance, or try again in a moment.";
   }
