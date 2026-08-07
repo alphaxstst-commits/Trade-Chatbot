@@ -1,5 +1,18 @@
+// public/widget.js – with history persistence
 (function() {
   const API_BASE = window.CHAT_API_BASE || '/api';
+  const STORAGE_KEY = 'chat_history';
+
+  // Load history from sessionStorage (or start fresh)
+  let conversationHistory = [];
+  try {
+    const saved = sessionStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      conversationHistory = JSON.parse(saved);
+    }
+  } catch (e) {
+    conversationHistory = [];
+  }
 
   // Floating button
   const btn = document.createElement('div');
@@ -188,7 +201,7 @@
     </div>
   `;
 
-  // ----- JavaScript logic -----
+  // ----- JavaScript logic with proper history -----
   const messagesDiv = document.getElementById('chat-messages');
   const input = document.getElementById('chat-input');
   const sendBtn = document.getElementById('chat-send');
@@ -198,14 +211,33 @@
   const bookSubmit = document.getElementById('book-submit');
   const bookCancel = document.getElementById('book-cancel');
 
+  // Restore messages from history
+  function restoreMessages() {
+    messagesDiv.innerHTML = '';
+    conversationHistory.forEach(msg => {
+      const div = document.createElement('div');
+      div.className = `chat-message ${msg.role === 'user' ? 'user' : 'ai'}`;
+      div.textContent = msg.content;
+      messagesDiv.appendChild(div);
+    });
+    if (conversationHistory.length === 0) {
+      addMessage('system', 'Hi! How can I help you with plumbing, HVAC, excavation, or land clearing?');
+    }
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+  }
+
+  function saveHistory() {
+    try {
+      sessionStorage.setItem(STORAGE_KEY, JSON.stringify(conversationHistory));
+    } catch (e) { /* ignore */ }
+  }
+
   btn.addEventListener('click', function() {
     if (chatWindow.style.display === 'flex') {
       chatWindow.style.display = 'none';
     } else {
       chatWindow.style.display = 'flex';
-      if (messagesDiv.children.length === 0) {
-        addMessage('system', 'Hi! How can I help you with plumbing, HVAC, excavation, or land clearing?');
-      }
+      restoreMessages();
       bookingForm.style.display = 'none';
     }
   });
@@ -215,34 +247,42 @@
   });
 
   bookBtn.addEventListener('click', function() {
-    if (bookingForm.style.display === 'none') {
-      bookingForm.style.display = 'flex';
-    } else {
-      bookingForm.style.display = 'none';
-    }
+    bookingForm.style.display = bookingForm.style.display === 'none' ? 'flex' : 'none';
   });
 
   function addMessage(type, text) {
     const div = document.createElement('div');
-    div.className = 'chat-message ' + type;
+    div.className = `chat-message ${type}`;
     div.textContent = text;
     messagesDiv.appendChild(div);
     messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    // Only save user and ai messages to history (skip system/error)
+    if (type === 'user' || type === 'ai') {
+      conversationHistory.push({ role: type === 'user' ? 'user' : 'assistant', content: text });
+      saveHistory();
+    }
   }
 
   async function sendMessage() {
     const text = input.value.trim();
     if (!text) return;
+
     addMessage('user', text);
     input.value = '';
     input.disabled = true;
     sendBtn.disabled = true;
 
+    // Send the full conversation history (excluding the latest user message)
+    const historyForAPI = conversationHistory.slice(0, -1);
+
     try {
-      const res = await fetch(API_BASE + '/chat', {
+      const res = await fetch(`${API_BASE}/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: text, history: [] })
+        body: JSON.stringify({
+          message: text,
+          history: historyForAPI
+        })
       });
       const data = await res.json();
       if (data.reply) {
@@ -278,7 +318,7 @@
     }
 
     try {
-      const res = await fetch(API_BASE + '/appointment', {
+      const res = await fetch(`${API_BASE}/appointment`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, phone, email, service, date, time, notes })
@@ -305,4 +345,7 @@
   bookCancel.addEventListener('click', function() {
     bookingForm.style.display = 'none';
   });
+
+  // Initial restore
+  restoreMessages();
 })();
