@@ -2,7 +2,7 @@
 const express = require('express');
 const router = express.Router();
 const { callOpenRouter } = require('../services/openrouter');
-const business = require('../knowledge/JS businessScript.js');
+const business = require('../knowledge/businessScript.js');
 
 // In-memory session store (for WhatsApp, use phone number as key)
 // For web, we pass state from frontend
