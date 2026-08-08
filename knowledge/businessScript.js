@@ -1,71 +1,90 @@
 // knowledge/JS businessScript.js
 
 module.exports = {
-  // Business hours (24‑hour format)
+  // Business hours
   businessHours: {
-    open: 8,   // 8 AM
-    close: 20, // 8 PM
+    open: 8,
+    close: 20,
     timezone: 'America/Toronto'
   },
 
-  // Service catalogue with typical price ranges (non‑binding estimates)
+  // Services with price ranges
   services: [
     {
       id: 'plumbing',
-      name: 'Plumbing Repair',
-      description: 'Fix leaks, pipes, faucets, toilets, water heaters.',
+      name: 'Plumbing',
+      description: 'Fix leaks, pipes, faucets, toilets, water heaters, bathtub installation.',
       typicalPriceRange: '$150 – $600',
       emergencyEligible: true
     },
     {
       id: 'hvac',
-      name: 'HVAC Repair / Installation',
+      name: 'HVAC',
       description: 'Heating, cooling, ventilation, furnace, AC, heat pumps.',
       typicalPriceRange: '$200 – $1,200',
       emergencyEligible: true
     },
     {
       id: 'excavation',
-      name: 'Excavation & Trenching',
+      name: 'Excavation',
       description: 'Digging, land grading, foundation work, utility lines.',
       typicalPriceRange: '$800 – $5,000',
       emergencyEligible: false
     },
     {
       id: 'electrical',
-      name: 'Electrical Services',
+      name: 'Electrical',
       description: 'Wiring, panels, lighting, troubleshooting, generators.',
       typicalPriceRange: '$120 – $800',
       emergencyEligible: true
     },
     {
-      id: 'general',
-      name: 'General Handyman',
-      description: 'Small repairs, installations, assembly, drywall, painting.',
+      id: 'handyman',
+      name: 'Handyman',
+      description: 'Small repairs, installations, assembly, drywall, painting, mulching, land clearing.',
       typicalPriceRange: '$80 – $400',
       emergencyEligible: false
     }
   ],
 
-  // Keywords that trigger emergency path
+  // Emergency keywords
   emergencyKeywords: [
     'burst pipe', 'flood', 'no heat', 'freezing', 'gas smell',
     'emergency', 'urgent', 'right away', 'immediate', 'fire',
-    'broken pipe', 'water everywhere', 'danger'
+    'broken pipe', 'water everywhere', 'danger', 'asap', 'now',
+    'leaking', 'flooding', 'emergency plumber', '24/7'
   ],
 
-  // Helper to find a service by name (fuzzy match)
-  findService(query) {
-    const lower = query.toLowerCase();
-    return this.services.find(s => 
-      s.name.toLowerCase().includes(lower) || 
-      s.description.toLowerCase().includes(lower)
-    );
+  // Greeting message with 3 options
+  getGreeting() {
+    return `Hi there! 👋 I'm TradePro AI. How can I help you today?
+
+**Choose an option:**
+
+1️⃣ **Book a service** (repair, install, or get a quote)
+2️⃣ **Ask a question** (pricing, availability, what we do)
+3️⃣ **Emergency help** (urgent issues like burst pipes)
+
+Or just tell me what you need in your own words!`;
   },
 
-  // Helper to check if a message is emergency
+  // Check if message is emergency
   isEmergency(message) {
     const lower = message.toLowerCase();
     return this.emergencyKeywords.some(keyword => lower.includes(keyword));
+  },
+
+  // Find service by name (fuzzy match)
+  findService(query) {
+    const lower = query.toLowerCase();
+    // Check if any service name or description matches
+    for (const service of this.services) {
+      if (service.name.toLowerCase().includes(lower) ||
+          service.description.toLowerCase().includes(lower) ||
+          lower.includes(service.name.toLowerCase())) {
+        return service;
+      }
+    }
+    return null;
   }
 };

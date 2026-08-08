@@ -1,54 +1,39 @@
+// services/openrouter.js
 const axios = require('axios');
 
-let businessScript = "You are a helpful assistant for a contracting company.";
-try {
-  businessScript = require('../knowledge/businessScript');
-} catch (e) {
-  console.warn('Failed to load businessScript, using fallback.');
-}
+const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
+const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
 
-async function askAI(userMessage, conversationHistory = []) {
-  const messages = [
-    { role: 'system', content: businessScript },
-    ...conversationHistory,
-    { role: 'user', content: userMessage }
-  ];
-
-  const model = process.env.OPENROUTER_MODEL || 'meta-llama/llama-3-8b-instruct:free';
-  const apiKey = process.env.OPENROUTER_API_KEY;
-
-  if (!apiKey) {
-    console.error('OPENROUTER_API_KEY is missing!');
-    return "We're experiencing technical difficulties. Please call our office for immediate assistance.";
-  }
+async function callOpenRouter(prompt, options = {}) {
+  const temperature = options.temperature || 0.7;
 
   try {
     const response = await axios.post(
-      'https://openrouter.ai/api/v1/chat/completions',
+      OPENROUTER_URL,
       {
-        model,
-        messages,
-        temperature: 0.3,
-        max_tokens: 150,
+        model: 'deepseek/deepseek-chat-v3-0324:free',
+        messages: [
+          { role: 'system', content: 'You are a helpful, professional assistant.' },
+          { role: 'user', content: prompt }
+        ],
+        temperature: temperature,
+        max_tokens: 500
       },
       {
         headers: {
-          'Authorization': `Bearer ${apiKey}`,
+          'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
           'Content-Type': 'application/json',
-        },
-        timeout: 6000,
+          'HTTP-Referer': process.env.SITE_URL || 'http://localhost:3000',
+          'X-Title': 'TradePro Chatbot'
+        }
       }
     );
 
-    let reply = response.data.choices[0].message.content || '';
-    reply = reply.replace(/[*_`#]/g, '');
-    reply = reply.replace(/\n{2,}/g, '\n\n');
-    return reply.trim() || "I'm sorry, I couldn't generate a response. Please try again.";
+    return response.data.choices[0].message.content.trim();
   } catch (error) {
-    // Log the full error response for debugging
-    console.error('OpenRouter error:', error.response?.data || error.message);
-    return "I apologize, but I'm having trouble connecting right now. Please call our office at (555) 123-4567 for immediate assistance, or try again in a moment.";
+    console.error('OpenRouter API error:', error.response?.data || error.message);
+    throw error;
   }
 }
 
-module.exports = { askAI };
+module.exports = { callOpenRouter };

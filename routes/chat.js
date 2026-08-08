@@ -4,150 +4,191 @@ const router = express.Router();
 const { callOpenRouter } = require('../services/openrouter');
 const business = require('../knowledge/JS businessScript.js');
 
-// In‑memory store for WhatsApp sessions (key: phone number)
-// For production, you'd persist to Google Sheets or DB
+// In-memory session store (for WhatsApp, use phone number as key)
+// For web, we pass state from frontend
 const sessionStore = new Map();
 
-// Helper: Check if we have all required fields
+// Required fields to complete a booking
+const REQUIRED_FIELDS = ['name', 'phone', 'address', 'service', 'preferredTime'];
+
+// Helper: Check if all required fields are present
 function isBookingComplete(state) {
-  const required = ['name', 'phone', 'address', 'service', 'preferredTime'];
-  return required.every(f => state[f] && state[f].trim() !== '');
+  return REQUIRED_FIELDS.every(f => state[f] && state[f].trim() !== '');
 }
 
-// Helper: Build the "known so far" summary
-function buildStateSummary(state) {
+// Helper: Get missing fields
+function getMissingFields(state) {
+  const missing = [];
+  if (!state.name) missing.push('your full name');
+  if (!state.phone) missing.push('your phone number');
+  if (!state.address) missing.push('your address');
+  if (!state.service) missing.push('what service you need');
+  if (!state.preferredTime) missing.push('your preferred date/time');
+  return missing;
+}
+
+// Helper: Build "known so far" summary
+function getKnownSummary(state) {
   const known = Object.entries(state)
     .filter(([k, v]) => v && v.trim() !== '')
     .map(([k, v]) => `- ${k}: ${v}`)
     .join('\n');
-  return known || 'Nothing yet.';
+  return known || 'Nothing provided yet.';
 }
 
-// Main chat endpoint
+// Helper: Find service from message
+function findServiceInMessage(message) {
+  const lower = message.toLowerCase();
+  for (const service of business.services) {
+    if (lower.includes(service.name.toLowerCase()) || 
+        service.description.toLowerCase().split(' ').some(word => lower.includes(word))) {
+      return service;
+    }
+  }
+  return null;
+}
+
+// Helper: Get price for a service
+function getPriceForService(serviceName) {
+  const service = business.services.find(s => 
+    s.name.toLowerCase() === serviceName.toLowerCase()
+  );
+  return service ? service.typicalPriceRange : null;
+}
+
+// ---- MAIN CHAT ENDPOINT ----
 router.post('/', async (req, res) => {
   const { message, sessionId, state = {}, history = [] } = req.body;
 
-  // 1. Emergency detection (priority)
+  console.log('📩 Received message:', message);
+  console.log('📦 Current state:', state);
+
+  // ---- STEP 1: EMERGENCY CHECK ----
   if (business.isEmergency(message)) {
-    const reply = `🚨 **URGENT** — This appears to be an emergency. Please call us immediately at **1‑800‑555‑0199** for priority assistance. Do not wait for a chat response.`;
+    const reply = `🚨 **URGENT** – This appears to be an emergency. Please call us immediately at **1-800-555-0199** for priority assistance. Do not wait for a chat response.`;
     return res.json({ reply, state: { ...state, emergency: true } });
   }
 
-  // 2. Check business hours (if not emergency)
-  const now = new Date();
-  const hour = now.getHours();
-  const isOpen = hour >= business.businessHours.open && hour < business.businessHours.close;
-  if (!isOpen) {
-    const reply = `⏰ Our business hours are ${business.businessHours.open}:00 – ${business.businessHours.close}:00. We'll respond first thing tomorrow morning. Please leave your message and we'll get back to you.`;
-    // But we still continue to collect info; we just add the notice.
-  }
-
-  // 3. Extract fields from message using LLM (structured)
+  // ---- STEP 2: EXTRACT INFORMATION FROM MESSAGE ----
+  // We'll use the LLM to extract structured data from the user's message
   const extractionPrompt = `
-You are a data extraction assistant. Extract the following fields from the user's latest message, if present:
-- name (full name)
-- phone (phone number)
-- address (street, city, or full address)
-- service (type of service, e.g., plumbing, HVAC, electrical)
-- preferredTime (any date/time mention)
-
-Return ONLY valid JSON with keys: name, phone, address, service, preferredTime.
+You are a data extraction assistant. Extract the following fields from the user's latest message, if present.
 If a field is not mentioned, set it to null.
+
+Fields to extract:
+- name: the user's full name (e.g., "John Smith")
+- phone: phone number (e.g., "555-1234" or "416-555-1234")
+- address: street address or city (e.g., "123 Main St, Toronto")
+- service: the type of service needed (e.g., "plumbing", "HVAC", "excavation", "electrical")
+- preferredTime: any date or time mentioned (e.g., "tomorrow", "Monday", "3pm")
+
+Return ONLY valid JSON. No other text.
 
 User message: "${message}"
 `;
 
   let extracted = {};
   try {
-    const extractionResponse = await callOpenRouter(extractionPrompt, { temperature: 0.1 });
-    // Expect JSON in response
-    const jsonMatch = extractionResponse.match(/\{.*\}/s);
+    const extResponse = await callOpenRouter(extractionPrompt, { temperature: 0.1 });
+    // Try to parse JSON from the response
+    const jsonMatch = extResponse.match(/\{[^]*\}/);
     if (jsonMatch) {
       extracted = JSON.parse(jsonMatch[0]);
+      console.log('✅ Extracted:', extracted);
     } else {
-      // fallback: manual regex (simple)
-      extracted = {};
+      console.log('⚠️ No JSON found in extraction response');
     }
   } catch (e) {
-    console.warn('Extraction failed, using fallback:', e);
-    extracted = {};
+    console.error('❌ Extraction failed:', e.message);
   }
 
-  // Merge extracted into state (only non‑null)
+  // ---- STEP 3: MERGE EXTRACTED DATA INTO STATE ----
   const newState = { ...state };
   for (const [key, value] of Object.entries(extracted)) {
-    if (value && value.trim() !== '') {
+    if (value && value.trim() !== '' && value !== 'null') {
       newState[key] = value.trim();
     }
   }
 
-  // Also try to identify service from message if not extracted
+  // If no service was extracted, try to detect it from the message
   if (!newState.service) {
-    const found = business.findService(message);
-    if (found) newState.service = found.name;
+    const foundService = findServiceInMessage(message);
+    if (foundService) {
+      newState.service = foundService.name;
+      console.log('🔍 Detected service from message:', foundService.name);
+    }
   }
 
-  // 4. Generate reply based on completeness
-  let reply = '';
+  // ---- STEP 4: CHECK IF BOOKING IS COMPLETE ----
   const complete = isBookingComplete(newState);
+  console.log('📋 Booking complete?', complete);
+  console.log('📋 Current state:', newState);
+
+  // ---- STEP 5: GENERATE REPLY ----
+  let reply = '';
 
   if (complete) {
-    // All fields present → trigger booking
-    reply = `✅ Great! I have everything we need.\n\n📋 **Booking Summary:**\n- Name: ${newState.name}\n- Phone: ${newState.phone}\n- Address: ${newState.address}\n- Service: ${newState.service}\n- Preferred time: ${newState.preferredTime}\n\nI'll confirm this booking with you shortly. Thank you!`;
-    // You can also send email notification here via email.js
+    // ---- ALL FIELDS PRESENT → CONFIRM BOOKING ----
+    const priceRange = getPriceForService(newState.service);
+    reply = `✅ **Booking Confirmed!** Here's your summary:
+
+📋 **Service:** ${newState.service}
+👤 **Name:** ${newState.name}
+📱 **Phone:** ${newState.phone}
+📍 **Address:** ${newState.address}
+📅 **Preferred Time:** ${newState.preferredTime}
+${priceRange ? `💰 **Price Range:** ${priceRange} (final price depends on site inspection)` : ''}
+
+We'll contact you shortly to confirm. Thank you for choosing TradePro! 🛠️`;
+
+    // Optional: Send email notification here
+    // await sendEmailBooking(newState);
+
   } else {
-    // Build the "missing fields" list
-    const missing = [];
-    if (!newState.name) missing.push('your full name');
-    if (!newState.phone) missing.push('your phone number');
-    if (!newState.address) missing.push('your address');
-    if (!newState.service) missing.push('what service you need');
-    if (!newState.preferredTime) missing.push('your preferred date/time');
+    // ---- MISSING FIELDS → ASK FOR WHAT'S MISSING ----
+    const missing = getMissingFields(newState);
+    const knownSummary = getKnownSummary(newState);
+    const priceInfo = newState.service ? getPriceForService(newState.service) : null;
 
-    // If we have some info, we can give a price estimate
-    let priceInfo = '';
-    if (newState.service) {
-      const serviceObj = business.services.find(s => s.name.toLowerCase() === newState.service.toLowerCase());
-      if (serviceObj) {
-        priceInfo = `\n\n💰 **Price estimate**: ${serviceObj.typicalPriceRange} (final price depends on site inspection)`;
-      }
-    }
-
-    // Generate a friendly prompt asking only for missing fields
-    const knownSummary = buildStateSummary(newState);
+    // Build the reply prompt for the LLM
     const replyPrompt = `
-You are a professional customer service assistant for a blue‑collar trade company.
+You are a professional, friendly customer service assistant for a blue-collar trade company called "TradePro" that does plumbing, HVAC, excavation, electrical, and handyman services.
 
-The customer has provided the following information so far:
+The customer has provided this information so far:
 ${knownSummary}
 
-The following information is still needed (ask only for these, never ask for what's already provided):
+The following information is still needed (ask ONLY for these):
 - ${missing.join('\n- ')}
 
-Your task: Write a polite, concise reply that:
-- Greets the customer professionally (if this is the first interaction)
-- Asks ONLY for the missing information (list them clearly)
-- If any service was mentioned, include the typical price range (${priceInfo || 'we can provide a quote after we know the service'})
-- Do not ask for anything already known.
-- Do not mention anything about emergency (that's already handled).
+${priceInfo ? `The customer mentioned they need "${newState.service}". The typical price range for this service is ${priceInfo}. Only mention this if they ask about pricing, otherwise don't bring it up.` : ''}
 
-Keep the tone friendly and helpful. Use bullet points if needed.
+Your task:
+- Write a polite, professional reply.
+- Ask ONLY for the missing information listed above. Never ask for anything already provided.
+- If this is the first message, greet them professionally.
+- If they mentioned a specific service, acknowledge it briefly.
+- Keep it short and friendly. 2-3 sentences max, plus a bullet list if needed.
+- Do NOT ask about emergency (that's already handled separately).
+
+IMPORTANT: The customer said: "${message}"
 `;
 
     try {
       const genResponse = await callOpenRouter(replyPrompt, { temperature: 0.7 });
       reply = genResponse;
+      console.log('💬 Generated reply:', reply);
     } catch (e) {
-      console.error('Reply generation failed:', e);
-      reply = "Could you please provide your full name, phone number, address, what service you need, and your preferred time?";
+      console.error('❌ Reply generation failed:', e.message);
+      // Fallback reply
+      reply = `Thanks for reaching out. I just need a few more details to help you:\n\n• ${missing.join('\n• ')}\n\nPlease provide those and I'll get you sorted!`;
     }
   }
 
-  // 5. If we have a phone number, we could store session in Google Sheets for persistence
-  // (optional)
-
-  // Return updated state and reply
-  res.json({ reply, state: newState });
+  // ---- STEP 6: RETURN RESPONSE ----
+  res.json({
+    reply: reply,
+    state: newState
+  });
 });
 
 module.exports = router;

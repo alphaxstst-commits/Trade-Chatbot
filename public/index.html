@@ -3,47 +3,84 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>TradePro</title>
-  <!-- Include Inter font -->
+  <title>TradePro Services</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:opsz@14..32&display=swap" rel="stylesheet">
   <style>
-    /* Global reset */
-    body {
+    * {
       margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
       font-family: 'Inter', sans-serif;
       background: #0d0d17;
       color: #e0e0e0;
       min-height: 100vh;
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
     }
-    .demo-page {
+    .hero {
       text-align: center;
       padding: 2rem;
+      max-width: 600px;
     }
-    .demo-page h1 {
-      font-size: 2.5rem;
-      font-weight: 600;
+    .hero h1 {
+      font-size: 3rem;
+      font-weight: 700;
       background: linear-gradient(135deg, #9f9fdf, #6b6b9f);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
+      margin-bottom: 1rem;
     }
-    .demo-page p {
+    .hero p {
       color: #8888aa;
-      max-width: 500px;
-      margin: 1rem auto;
+      font-size: 1.1rem;
+      line-height: 1.7;
+    }
+    .badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+      margin-top: 1.5rem;
+    }
+    .badge {
+      background: #1a1a2e;
+      border: 1px solid #2a2a4a;
+      padding: 6px 16px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      color: #aaaacc;
+    }
+    .footer-note {
+      margin-top: 2rem;
+      font-size: 0.8rem;
+      color: #444466;
     }
   </style>
 </head>
 <body>
-  <div class="demo-page">
-    <h1>TradePro Services</h1>
-    <p>Plumbing · HVAC · Excavation · Electrical · Handyman</p>
-    <p style="font-size:0.9rem; color:#555;">Click the chat bubble in the bottom‑right corner.</p>
+  <div class="hero">
+    <h1>🛠️ TradePro</h1>
+    <p>
+      Plumbing · HVAC · Excavation · Electrical · Handyman<br>
+      <span style="color:#666688;font-size:0.95rem;">Professional trades, done right.</span>
+    </p>
+    <div class="badges">
+      <span class="badge">✅ Licensed & Insured</span>
+      <span class="badge">⭐ 4.9/5 Rating</span>
+      <span class="badge">🚀 24/7 Emergency</span>
+    </div>
+    <p style="margin-top:1.5rem;color:#555577;font-size:0.9rem;">
+      Click the chat bubble below to start a conversation.
+    </p>
+    <div class="footer-note">
+      <span>💬 AI-powered assistant · Real humans on standby</span>
+    </div>
   </div>
 
-  <!-- The widget will be injected by widget.js -->
   <script src="/widget.js"></script>
 </body>
 </html>
