@@ -1,85 +1,77 @@
 // routes/whatsappWebhook.js
 const express = require('express');
 const router = express.Router();
-const { askAI } = require('../services/openrouter');
+const { callOpenRouter } = require('../services/openrouter');
+const business = require('../knowledge/JS businessScript.js');
 const { sendWhatsAppMessage } = require('../services/whatsapp');
-const { appendToSheet } = require('../services/googleSheets');
-const { sendEmail } = require('../services/email');
 
-// Verify webhook (GET)
-router.get('/', (req, res) => {
-  const mode = req.query['hub.mode'];
-  const token = req.query['hub.verify_token'];
-  const challenge = req.query['hub.challenge'];
-  if (mode === 'subscribe' && token === process.env.WHATSAPP_VERIFY_TOKEN) {
-    res.status(200).send(challenge);
-  } else {
-    res.sendStatus(403);
-  }
-});
+// Session store keyed by phone number
+const sessionStore = new Map();
 
-// Handle incoming messages and calls (POST)
 router.post('/', async (req, res) => {
-  try {
-    const { entry } = req.body;
-    for (const e of entry) {
-      for (const change of e.changes) {
-        const value = change.value;
+  const { body } = req;
+  const message = body.message || body.text;
+  const from = body.from; // phone number
 
-        // --- Incoming text messages ---
-        if (value.messages) {
-          for (const msg of value.messages) {
-            if (msg.type === 'text') {
-              const from = msg.from;
-              const text = msg.text.body;
-              // Use AI to generate reply (no history for simplicity)
-              const aiReply = await askAI(text, []);
-              await sendWhatsAppMessage(from, aiReply);
+  // Load existing state
+  let state = sessionStore.get(from) || {};
 
-              // Optionally capture lead if user provides name/phone/email
-              // For now, just log as conversation
-            }
-          }
-        }
-
-        // --- Missed calls ---
-        if (value.calls) {
-          for (const call of value.calls) {
-            if (call.call_status === 'missed') {
-              const from = call.from;
-              // Send a message to schedule
-              await sendWhatsAppMessage(
-                from,
-                "Hi there! We noticed you called but we couldn't answer. Let's schedule a time to chat. Please reply with your name and preferred time."
-              );
-              // Log as lead with follow-up needed
-              await appendToSheet(process.env.LEADS_SHEET_ID, [
-                new Date().toISOString(),
-                from,
-                '',
-                '',
-                'Missed Call',
-                'Follow-up needed',
-                'Missed call - auto message sent',
-                'Follow-up',
-              ]);
-              // Notify owner
-              const ownerHtml = `<p>Missed call from ${from}. Auto-follow-up sent.</p>`;
-              await sendEmail({
-                to: process.env.NOTIFY_EMAIL_TO,
-                subject: 'Missed Call - WhatsApp',
-                html: ownerHtml,
-              });
-            }
-          }
-        }
-      }
-    }
-    res.sendStatus(200);
-  } catch (err) {
-    console.error(err);
-    res.sendStatus(500);
+  // 1. Emergency check
+  if (business.isEmergency(message)) {
+    const reply = `🚨 URGENT – Please call us immediately at 1‑800‑555‑0199 for emergency assistance.`;
+    await sendWhatsAppMessage(from, reply);
+    return res.sendStatus(200);
   }
+
+  // 2. Extract fields (same as chat.js)
+  const extractionPrompt = `...`; // same as above
+  let extracted = {};
+  try {
+    const extRes = await callOpenRouter(extractionPrompt, { temperature: 0.1 });
+    // parse JSON
+    const jsonMatch = extRes.match(/\{.*\}/s);
+    if (jsonMatch) extracted = JSON.parse(jsonMatch[0]);
+  } catch (e) { /* fallback */ }
+
+  // Merge
+  const newState = { ...state };
+  for (const [key, value] of Object.entries(extracted)) {
+    if (value && value.trim() !== '') newState[key] = value.trim();
+  }
+  // identify service if missing
+  if (!newState.service) {
+    const found = business.findService(message);
+    if (found) newState.service = found.name;
+  }
+
+  // 3. Generate reply (same logic as chat)
+  const complete = isBookingComplete(newState);
+  let reply = '';
+  if (complete) {
+    reply = `✅ Booking confirmed! ...`; // as above
+    // Optionally clear state after booking?
+  } else {
+    // Build missing list and price info
+    const missing = [];
+    if (!newState.name) missing.push('your full name');
+    if (!newState.phone) missing.push('your phone number');
+    if (!newState.address) missing.push('your address');
+    if (!newState.service) missing.push('what service you need');
+    if (!newState.preferredTime) missing.push('your preferred date/time');
+
+    const knownSummary = buildStateSummary(newState);
+    const replyPrompt = `...`; // same as in chat.js
+    const genResponse = await callOpenRouter(replyPrompt, { temperature: 0.7 });
+    reply = genResponse;
+  }
+
+  // Save updated state
+  sessionStore.set(from, newState);
+
+  // Send reply via WhatsApp
+  await sendWhatsAppMessage(from, reply);
+
+  res.sendStatus(200);
 });
 
 module.exports = router;
