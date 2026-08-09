@@ -1,39 +1,56 @@
 // services/openrouter.js
-const axios = require('axios');
 
-const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
-const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
+async function callModel(systemPrompt, userMessage, { jsonMode = false } = {}) {
+  const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
+      "Content-Type": "application/json",
+      "HTTP-Referer": process.env.SITE_URL || "https://example.com",
+      "X-Title": process.env.SITE_NAME || "Trade Chatbot",
+    },
+    body: JSON.stringify({
+      model: process.env.OPENROUTER_MODEL || "openai/gpt-4o-mini",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userMessage },
+      ],
+      temperature: jsonMode ? 0 : 0.4,
+      max_tokens: jsonMode ? 300 : 500,
+    }),
+  });
 
-async function callOpenRouter(prompt, options = {}) {
-  const temperature = options.temperature || 0.7;
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`OpenRouter error ${res.status}: ${text}`);
+  }
 
+  const data = await res.json();
+  return data.choices[0].message.content || "";
+}
+
+/**
+ * CALL #1 — structured extraction. Returns a parsed object, or {} if the
+ * model didn't return valid JSON (fails safe rather than throwing, so a bad
+ * extraction never crashes the conversation).
+ */
+async function extractFields(extractionPrompt, latestMessage) {
+  const raw = await callModel(extractionPrompt, latestMessage, { jsonMode: true });
   try {
-    const response = await axios.post(
-      OPENROUTER_URL,
-      {
-        model: 'deepseek/deepseek-chat-v3-0324:free',
-        messages: [
-          { role: 'system', content: 'You are a helpful, professional assistant.' },
-          { role: 'user', content: prompt }
-        ],
-        temperature: temperature,
-        max_tokens: 500
-      },
-      {
-        headers: {
-          'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
-          'Content-Type': 'application/json',
-          'HTTP-Referer': process.env.SITE_URL || 'http://localhost:3000',
-          'X-Title': 'TradePro Chatbot'
-        }
-      }
-    );
-
-    return response.data.choices[0].message.content.trim();
-  } catch (error) {
-    console.error('OpenRouter API error:', error.response?.data || error.message);
-    throw error;
+    // Strip markdown fences if the model added them despite instructions.
+    const cleaned = raw.replace(/```json|```/g, "").trim();
+    return JSON.parse(cleaned);
+  } catch (e) {
+    console.warn("extractFields: failed to parse model output as JSON:", raw);
+    return {};
   }
 }
 
-module.exports = { callOpenRouter };
+/**
+ * CALL #2 — reply generation. Returns plain text meant for the customer.
+ */
+async function generateReply(replyPrompt, latestMessage) {
+  return callModel(replyPrompt, latestMessage, { jsonMode: false });
+}
+
+module.exports = { extractFields, generateReply };
