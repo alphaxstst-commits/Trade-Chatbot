@@ -1,0 +1,68 @@
+{
+  "hvac": {
+    "trade": "HVAC",
+    "summary": "Heating, ventilation, and air conditioning installation, repair, and maintenance.",
+    "services": [
+      { "name": "AC Repair", "description": "Diagnosis and repair of central AC and mini-splits that aren't cooling, leaking, freezing, or noisy.", "typicalPriceRange": "$150 - $600", "emergencyAvailable": true },
+      { "name": "Furnace / Heating Repair", "description": "Repair of gas, electric, and heat pump furnaces: no heat, ignition failure, short cycling.", "typicalPriceRange": "$150 - $700", "emergencyAvailable": true },
+      { "name": "New System Installation", "description": "Full replacement/new install of AC, furnace, heat pump, or mini-split systems.", "typicalPriceRange": "$4,000 - $12,000", "emergencyAvailable": false },
+      { "name": "Duct Cleaning & Repair", "description": "Cleaning, sealing, repair of ductwork.", "typicalPriceRange": "$300 - $1,500", "emergencyAvailable": false },
+      { "name": "Preventive Maintenance Plan", "description": "Seasonal AC/furnace tune-ups.", "typicalPriceRange": "$120 - $250 per visit", "emergencyAvailable": false }
+    ],
+    "faqs": [
+      { "q": "AC blowing warm air?", "a": "Check thermostat and filter first. Otherwise usually refrigerant, compressor, or capacitor — needs a technician." },
+      { "q": "How often to service?", "a": "Twice a year: spring for AC, fall for heating." }
+    ],
+    "emergencyKeywords": ["no heat", "gas smell", "furnace not working and freezing", "no ac in extreme heat"]
+  },
+  "plumbing": {
+    "trade": "Plumbing",
+    "summary": "Residential plumbing repair, installation, and emergency service.",
+    "services": [
+      { "name": "Leak Detection & Repair", "description": "Locating and fixing leaks in pipes, joints, slabs, fixtures.", "typicalPriceRange": "$150 - $600", "emergencyAvailable": true },
+      { "name": "Drain Cleaning", "description": "Clearing clogged sinks, tubs, toilets, main lines.", "typicalPriceRange": "$120 - $500", "emergencyAvailable": true },
+      { "name": "Water Heater Repair & Installation", "description": "Repair/replacement of tank and tankless heaters.", "typicalPriceRange": "$200 - $2,500", "emergencyAvailable": true },
+      { "name": "Fixture Installation", "description": "Faucets, toilets, disposals, sinks, showerheads.", "typicalPriceRange": "$150 - $600 per fixture", "emergencyAvailable": false },
+      { "name": "Sink Installation", "description": "New sink install or replacement, including under-sink plumbing/joints.", "typicalPriceRange": "$200 - $700", "emergencyAvailable": false },
+      { "name": "Repiping", "description": "Full/partial pipe replacement.", "typicalPriceRange": "$2,000 - $8,000+", "emergencyAvailable": false }
+    ],
+    "faqs": [
+      { "q": "Toilet overflowing?", "a": "Shut off the valve at its base if possible; this is treated as a priority call." },
+      { "q": "Free estimates?", "a": "Diagnostic fee applies, waived if you proceed with the repair same visit." }
+    ],
+    "emergencyKeywords": ["burst pipe", "flooding", "sewage backup", "no water at all"]
+  },
+  "excavation": {
+    "trade": "Excavation",
+    "summary": "Site excavation, grading, demolition, and earthwork.",
+    "services": [
+      { "name": "Site Preparation & Grading", "description": "Clearing, leveling, grading before construction.", "typicalPriceRange": "$1,500 - $6,000", "emergencyAvailable": false },
+      { "name": "Foundation Excavation", "description": "Digging foundations/basements.", "typicalPriceRange": "$3,000 - $15,000", "emergencyAvailable": false },
+      { "name": "Utility Trenching", "description": "Trenching for water/sewer/gas/electric lines.", "typicalPriceRange": "$10 - $30 per linear foot", "emergencyAvailable": true },
+      { "name": "Demolition", "description": "Structure/driveway/pool/slab demolition with haul-away.", "typicalPriceRange": "$3,000 - $20,000", "emergencyAvailable": false },
+      { "name": "Land Clearing / Mulching", "description": "Removing trees/brush/debris to prepare land.", "typicalPriceRange": "$1,500 - $8,000 per acre", "emergencyAvailable": false },
+      { "name": "Drainage & French Drains", "description": "Drainage systems for pooling/flooding issues.", "typicalPriceRange": "$1,500 - $6,000", "emergencyAvailable": true }
+    ],
+    "faqs": [
+      { "q": "Permits needed?", "a": "Most foundation/utility/demolition work needs local permits; we handle applications on larger jobs." },
+      { "q": "Utility lines during digging?", "a": "We always schedule a call-before-you-dig utility locate first." }
+    ],
+    "emergencyKeywords": ["burst main utility line", "urgent flooding drainage"]
+  },
+  "homebuilders": {
+    "trade": "Home Builders",
+    "summary": "Custom home construction, additions, and major renovations.",
+    "services": [
+      { "name": "Custom Home Construction", "description": "Ground-up custom home builds.", "typicalPriceRange": "$150 - $350 per sq ft", "emergencyAvailable": false },
+      { "name": "Home Additions", "description": "Extra bedrooms, bathrooms, second stories, in-law suites.", "typicalPriceRange": "$25,000 - $150,000+", "emergencyAvailable": false },
+      { "name": "Kitchen Remodeling", "description": "Full/partial kitchen remodels.", "typicalPriceRange": "$15,000 - $75,000", "emergencyAvailable": false },
+      { "name": "Bathroom Remodeling", "description": "Full/partial bathroom remodels.", "typicalPriceRange": "$8,000 - $35,000", "emergencyAvailable": false },
+      { "name": "Storm / Damage Restoration", "description": "Structural repair after fire/storm/water damage.", "typicalPriceRange": "Varies by damage/insurance", "emergencyAvailable": true }
+    ],
+    "faqs": [
+      { "q": "Handle permits?", "a": "Yes, we coordinate drawings and permit submissions." },
+      { "q": "Custom home timeline?", "a": "Typically 6-12 months depending on size and permitting." }
+    ],
+    "emergencyKeywords": ["structural collapse", "storm damage roof caved", "fire damage"]
+  }
+}

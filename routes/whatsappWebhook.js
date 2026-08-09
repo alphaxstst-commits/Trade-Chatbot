@@ -1,77 +1,66 @@
 // routes/whatsappWebhook.js
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const { callOpenRouter } = require('../services/openrouter');
-const business = require('../knowledge/JS businessScript.js');
-const { sendWhatsAppMessage } = require('../services/whatsapp');
+const { handleMessage } = require("../services/agent");
 
-// Session store keyed by phone number
-const sessionStore = new Map();
+// ---------------------------------------------------------------------------
+// TODO INTEGRATION POINT #2
+// Replace this with your real services/whatsapp.js send function — I don't
+// have that file, so this is a safe placeholder using the raw Graph API call.
+// If your services/whatsapp.js already exports something like
+// `sendMessage(to, text)`, just delete this function and
+// `const { sendMessage } = require("../services/whatsapp");` instead.
+// ---------------------------------------------------------------------------
+async function sendMessage(to, text) {
+  const url = `https://graph.facebook.com/v20.0/${process.env.WHATSAPP_PHONE_NUMBER_ID}/messages`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${process.env.WHATSAPP_ACCESS_TOKEN}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ messaging_product: "whatsapp", to, type: "text", text: { body: text } }),
+  });
+  if (!res.ok) console.error("WhatsApp send error:", await res.text());
+}
+// ---------------------------------------------------------------------------
 
-router.post('/', async (req, res) => {
-  const { body } = req;
-  const message = body.message || body.text;
-  const from = body.from; // phone number
+// Meta webhook verification handshake
+router.get("/", (req, res) => {
+  const mode = req.query["hub.mode"];
+  const token = req.query["hub.verify_token"];
+  const challenge = req.query["hub.challenge"];
 
-  // Load existing state
-  let state = sessionStore.get(from) || {};
-
-  // 1. Emergency check
-  if (business.isEmergency(message)) {
-    const reply = `🚨 URGENT – Please call us immediately at 1‑800‑555‑0199 for emergency assistance.`;
-    await sendWhatsAppMessage(from, reply);
-    return res.sendStatus(200);
+  if (mode === "subscribe" && token === process.env.WHATSAPP_VERIFY_TOKEN) {
+    return res.status(200).send(challenge);
   }
+  return res.status(403).send("Verification failed");
+});
 
-  // 2. Extract fields (same as chat.js)
-  const extractionPrompt = `...`; // same as above
-  let extracted = {};
+router.post("/", async (req, res) => {
   try {
-    const extRes = await callOpenRouter(extractionPrompt, { temperature: 0.1 });
-    // parse JSON
-    const jsonMatch = extRes.match(/\{.*\}/s);
-    if (jsonMatch) extracted = JSON.parse(jsonMatch[0]);
-  } catch (e) { /* fallback */ }
+    const entry = req.body?.entry?.[0];
+    const change = entry?.changes?.[0]?.value;
+    const message = change?.messages?.[0];
 
-  // Merge
-  const newState = { ...state };
-  for (const [key, value] of Object.entries(extracted)) {
-    if (value && value.trim() !== '') newState[key] = value.trim();
+    if (!message) return res.status(200).send("ignored"); // status callbacks, not real messages
+
+    const from = message.from;
+    const text = message.text?.body || message.button?.text || "";
+
+    if (!text) {
+      await sendMessage(from, "Could you send that as a text message so I can help right away?");
+      return res.status(200).send("ok");
+    }
+
+    const result = await handleMessage({ key: `wa:${from}`, channel: "whatsapp", message: text });
+    await sendMessage(from, result.reply);
+
+    return res.status(200).send("ok");
+  } catch (err) {
+    console.error("routes/whatsappWebhook.js error:", err);
+    return res.status(200).send("error handled"); // always 200 so Meta doesn't retry-storm you
   }
-  // identify service if missing
-  if (!newState.service) {
-    const found = business.findService(message);
-    if (found) newState.service = found.name;
-  }
-
-  // 3. Generate reply (same logic as chat)
-  const complete = isBookingComplete(newState);
-  let reply = '';
-  if (complete) {
-    reply = `✅ Booking confirmed! ...`; // as above
-    // Optionally clear state after booking?
-  } else {
-    // Build missing list and price info
-    const missing = [];
-    if (!newState.name) missing.push('your full name');
-    if (!newState.phone) missing.push('your phone number');
-    if (!newState.address) missing.push('your address');
-    if (!newState.service) missing.push('what service you need');
-    if (!newState.preferredTime) missing.push('your preferred date/time');
-
-    const knownSummary = buildStateSummary(newState);
-    const replyPrompt = `...`; // same as in chat.js
-    const genResponse = await callOpenRouter(replyPrompt, { temperature: 0.7 });
-    reply = genResponse;
-  }
-
-  // Save updated state
-  sessionStore.set(from, newState);
-
-  // Send reply via WhatsApp
-  await sendWhatsAppMessage(from, reply);
-
-  res.sendStatus(200);
 });
 
 module.exports = router;
