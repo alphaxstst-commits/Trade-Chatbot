@@ -3,14 +3,14 @@
     "trade": "HVAC",
     "summary": "Heating, ventilation, and air conditioning installation, repair, and maintenance.",
     "services": [
-      { "name": "AC Repair", "description": "Diagnosis and repair of central AC and mini-splits that aren't cooling, leaking, freezing, or noisy.", "typicalPriceRange": "$150 - $600", "emergencyAvailable": true },
+      { "name": "AC Repair", "description": "Diagnosis and repair of central AC and mini-splits that are not cooling, leaking, freezing, or noisy.", "typicalPriceRange": "$150 - $600", "emergencyAvailable": true },
       { "name": "Furnace / Heating Repair", "description": "Repair of gas, electric, and heat pump furnaces: no heat, ignition failure, short cycling.", "typicalPriceRange": "$150 - $700", "emergencyAvailable": true },
-      { "name": "New System Installation", "description": "Full replacement/new install of AC, furnace, heat pump, or mini-split systems.", "typicalPriceRange": "$4,000 - $12,000", "emergencyAvailable": false },
+      { "name": "New System Installation", "description": "Full replacement or new install of AC, furnace, heat pump, or mini-split systems.", "typicalPriceRange": "$4,000 - $12,000", "emergencyAvailable": false },
       { "name": "Duct Cleaning & Repair", "description": "Cleaning, sealing, repair of ductwork.", "typicalPriceRange": "$300 - $1,500", "emergencyAvailable": false },
-      { "name": "Preventive Maintenance Plan", "description": "Seasonal AC/furnace tune-ups.", "typicalPriceRange": "$120 - $250 per visit", "emergencyAvailable": false }
+      { "name": "Preventive Maintenance Plan", "description": "Seasonal AC and furnace tune-ups.", "typicalPriceRange": "$120 - $250 per visit", "emergencyAvailable": false }
     ],
     "faqs": [
-      { "q": "AC blowing warm air?", "a": "Check thermostat and filter first. Otherwise usually refrigerant, compressor, or capacitor — needs a technician." },
+      { "q": "AC blowing warm air?", "a": "Check thermostat and filter first. Otherwise usually refrigerant, compressor, or capacitor, needs a technician." },
       { "q": "How often to service?", "a": "Twice a year: spring for AC, fall for heating." }
     ],
     "emergencyKeywords": ["no heat", "gas smell", "furnace not working and freezing", "no ac in extreme heat"]
@@ -21,13 +21,13 @@
     "services": [
       { "name": "Leak Detection & Repair", "description": "Locating and fixing leaks in pipes, joints, slabs, fixtures.", "typicalPriceRange": "$150 - $600", "emergencyAvailable": true },
       { "name": "Drain Cleaning", "description": "Clearing clogged sinks, tubs, toilets, main lines.", "typicalPriceRange": "$120 - $500", "emergencyAvailable": true },
-      { "name": "Water Heater Repair & Installation", "description": "Repair/replacement of tank and tankless heaters.", "typicalPriceRange": "$200 - $2,500", "emergencyAvailable": true },
+      { "name": "Water Heater Repair & Installation", "description": "Repair or replacement of tank and tankless heaters.", "typicalPriceRange": "$200 - $2,500", "emergencyAvailable": true },
       { "name": "Fixture Installation", "description": "Faucets, toilets, disposals, sinks, showerheads.", "typicalPriceRange": "$150 - $600 per fixture", "emergencyAvailable": false },
-      { "name": "Sink Installation", "description": "New sink install or replacement, including under-sink plumbing/joints.", "typicalPriceRange": "$200 - $700", "emergencyAvailable": false },
-      { "name": "Repiping", "description": "Full/partial pipe replacement.", "typicalPriceRange": "$2,000 - $8,000+", "emergencyAvailable": false }
+      { "name": "Sink Installation", "description": "New sink install or replacement, including under-sink plumbing and joints.", "typicalPriceRange": "$200 - $700", "emergencyAvailable": false },
+      { "name": "Repiping", "description": "Full or partial pipe replacement.", "typicalPriceRange": "$2,000 - $8,000+", "emergencyAvailable": false }
     ],
     "faqs": [
-      { "q": "Toilet overflowing?", "a": "Shut off the valve at its base if possible; this is treated as a priority call." },
+      { "q": "Toilet overflowing?", "a": "Shut off the valve at its base if possible, this is treated as a priority call." },
       { "q": "Free estimates?", "a": "Diagnostic fee applies, waived if you proceed with the repair same visit." }
     ],
     "emergencyKeywords": ["burst pipe", "flooding", "sewage backup", "no water at all"]
@@ -37,14 +37,14 @@
     "summary": "Site excavation, grading, demolition, and earthwork.",
     "services": [
       { "name": "Site Preparation & Grading", "description": "Clearing, leveling, grading before construction.", "typicalPriceRange": "$1,500 - $6,000", "emergencyAvailable": false },
-      { "name": "Foundation Excavation", "description": "Digging foundations/basements.", "typicalPriceRange": "$3,000 - $15,000", "emergencyAvailable": false },
-      { "name": "Utility Trenching", "description": "Trenching for water/sewer/gas/electric lines.", "typicalPriceRange": "$10 - $30 per linear foot", "emergencyAvailable": true },
-      { "name": "Demolition", "description": "Structure/driveway/pool/slab demolition with haul-away.", "typicalPriceRange": "$3,000 - $20,000", "emergencyAvailable": false },
-      { "name": "Land Clearing / Mulching", "description": "Removing trees/brush/debris to prepare land.", "typicalPriceRange": "$1,500 - $8,000 per acre", "emergencyAvailable": false },
-      { "name": "Drainage & French Drains", "description": "Drainage systems for pooling/flooding issues.", "typicalPriceRange": "$1,500 - $6,000", "emergencyAvailable": true }
+      { "name": "Foundation Excavation", "description": "Digging foundations and basements.", "typicalPriceRange": "$3,000 - $15,000", "emergencyAvailable": false },
+      { "name": "Utility Trenching", "description": "Trenching for water, sewer, gas, and electric lines.", "typicalPriceRange": "$10 - $30 per linear foot", "emergencyAvailable": true },
+      { "name": "Demolition", "description": "Structure, driveway, pool, or slab demolition with haul-away.", "typicalPriceRange": "$3,000 - $20,000", "emergencyAvailable": false },
+      { "name": "Land Clearing / Mulching", "description": "Removing trees, brush, debris to prepare land.", "typicalPriceRange": "$1,500 - $8,000 per acre", "emergencyAvailable": false },
+      { "name": "Drainage & French Drains", "description": "Drainage systems for pooling or flooding issues.", "typicalPriceRange": "$1,500 - $6,000", "emergencyAvailable": true }
     ],
     "faqs": [
-      { "q": "Permits needed?", "a": "Most foundation/utility/demolition work needs local permits; we handle applications on larger jobs." },
+      { "q": "Permits needed?", "a": "Most foundation, utility, and demolition work needs local permits, we handle applications on larger jobs." },
       { "q": "Utility lines during digging?", "a": "We always schedule a call-before-you-dig utility locate first." }
     ],
     "emergencyKeywords": ["burst main utility line", "urgent flooding drainage"]
@@ -55,21 +55,21 @@
     "services": [
       { "name": "Electrical Repair", "description": "Fixing outlets, switches, flickering lights, tripped breakers, wiring issues.", "typicalPriceRange": "$120 - $500", "emergencyAvailable": true },
       { "name": "Panel Upgrade", "description": "Upgrading old or undersized electrical panels to modern capacity.", "typicalPriceRange": "$1,500 - $4,000", "emergencyAvailable": false },
-      { "name": "Lighting Installation", "description": "Indoor/outdoor lighting, ceiling fans, recessed lighting.", "typicalPriceRange": "$150 - $800", "emergencyAvailable": false },
+      { "name": "Lighting Installation", "description": "Indoor and outdoor lighting, ceiling fans, recessed lighting.", "typicalPriceRange": "$150 - $800", "emergencyAvailable": false },
       { "name": "EV Charger Installation", "description": "Home EV charging station installation.", "typicalPriceRange": "$500 - $2,000", "emergencyAvailable": false },
       { "name": "Whole-Home Rewiring", "description": "Rewiring older homes for safety and capacity.", "typicalPriceRange": "$4,000 - $15,000", "emergencyAvailable": false }
     ],
     "faqs": [
-      { "q": "Breaker keeps tripping, is that dangerous?", "a": "It can indicate an overloaded circuit or a fault — treat it as a priority repair, don't just keep resetting it." },
+      { "q": "Breaker keeps tripping, is that dangerous?", "a": "It can indicate an overloaded circuit or a fault, treat it as a priority repair, do not just keep resetting it." },
       { "q": "Do you handle permits for panel upgrades?", "a": "Yes, panel upgrades typically require a permit and inspection, which we coordinate." }
     ],
     "emergencyKeywords": ["sparking outlet", "burning smell electrical", "exposed wire", "power out entire house"]
   },
   "handyman": {
     "trade": "Handyman",
-    "summary": "General home repair and small project work that doesn't need a specialty trade.",
+    "summary": "General home repair and small project work that does not need a specialty trade.",
     "services": [
-      { "name": "General Repairs", "description": "Drywall patching, door/window adjustments, small fixes.", "typicalPriceRange": "$80 - $300", "emergencyAvailable": false },
+      { "name": "General Repairs", "description": "Drywall patching, door and window adjustments, small fixes.", "typicalPriceRange": "$80 - $300", "emergencyAvailable": false },
       { "name": "Furniture Assembly & Mounting", "description": "TV mounting, shelving, furniture assembly.", "typicalPriceRange": "$60 - $250", "emergencyAvailable": false },
       { "name": "Painting (small jobs)", "description": "Touch-ups and small room painting.", "typicalPriceRange": "$150 - $600", "emergencyAvailable": false },
       { "name": "Weatherproofing", "description": "Caulking, weatherstripping, minor sealing work.", "typicalPriceRange": "$100 - $400", "emergencyAvailable": false }
