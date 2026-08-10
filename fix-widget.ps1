@@ -1,4 +1,6 @@
-﻿(function () {
+# Run this from inside your trade-chatbot project folder:  .ix-widget.ps1
+@'
+(function () {
   var scriptTag = document.currentScript;
   var API_URL = (scriptTag && scriptTag.getAttribute("data-api")) || "/api/chat";
   var COMPANY = (scriptTag && scriptTag.getAttribute("data-company")) || "Ironclad Home Services";
@@ -9,7 +11,7 @@
   var ACCENT = (scriptTag && scriptTag.getAttribute("data-accent")) || "#c9974c";
   var ACCENT_SOFT = "rgba(201,151,76,0.14)";
 
-  // Every page load starts a brand-new conversation on purpose â€” a plain
+  // Every page load starts a brand-new conversation on purpose — a plain
   // in-memory id/array naturally resets on reload since the script re-runs
   // from scratch. (Previously this used sessionStorage to survive refreshes
   // mid-conversation; that's intentionally removed now per your request.)
@@ -376,3 +378,5 @@
   sendBtn.addEventListener("click", sendFreeText);
   inputEl.addEventListener("keydown", function (e) { if (e.key === "Enter") sendFreeText(); });
 })();
+'@ | Set-Content -Path .\public\widget.js -Encoding UTF8
+Write-Host "widget.js written directly to disk." -ForegroundColor Green
