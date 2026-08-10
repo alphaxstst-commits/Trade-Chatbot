@@ -1,6 +1,8 @@
 // services/agent.js
 const { getState, saveState } = require("./sessionStore");
 const { extractFields, generateReply } = require("./openrouter");
+const { saveAppointment, saveLead } = require("./googleSheets");
+const { sendAppointmentEmail, sendLeadEmail } = require("./email");
 const {
   REQUIRED_BOOKING_FIELDS,
   isEmergency,
@@ -9,31 +11,34 @@ const {
   buildGreeting,
 } = require("../knowledge/businessScript");
 
-// ---------------------------------------------------------------------------
-// TODO INTEGRATION POINT — still not wired to your real services/googleSheets.js
-// and services/email.js. This is why bookings/leads are not saving or emailing
-// yet. Send me those 3 files (googleSheets.js, email.js, whatsapp.js) and I will
-// wire this properly instead of guessing.
-// ---------------------------------------------------------------------------
 async function persistAppointment(state) {
-  console.log("TODO: wire to services/googleSheets.js + services/email.js -> appointment:", {
+  const payload = {
     fullName: state.fullName,
     phone: state.phone,
     address: state.address,
     serviceNeeded: state.serviceNeeded,
     preferredDateTime: state.preferredDateTime,
     urgent: state.urgent,
-  });
+    channel: state.channel || "website",
+  };
+  const sheetResult = await saveAppointment(payload);
+  const emailResult = await sendAppointmentEmail(payload);
+  if (!sheetResult.ok) console.error("persistAppointment: Sheets save failed", sheetResult);
+  if (!emailResult) console.error("persistAppointment: email send failed");
 }
 
 async function persistLead(state) {
-  console.log("TODO: wire to services/googleSheets.js + services/email.js -> lead:", {
+  const payload = {
     fullName: state.fullName,
     phone: state.phone,
     serviceNeeded: state.serviceNeeded,
-  });
+    channel: state.channel || "website",
+  };
+  const sheetResult = await saveLead(payload);
+  const emailResult = await sendLeadEmail(payload);
+  if (!sheetResult.ok) console.error("persistLead: Sheets save failed", sheetResult);
+  if (!emailResult) console.error("persistLead: email send failed");
 }
-// ---------------------------------------------------------------------------
 
 function mergeExtracted(state, extracted) {
   const fieldMap = ["fullName", "phone", "address", "serviceNeeded", "preferredDateTime"];
@@ -51,15 +56,9 @@ function mergeExtracted(state, extracted) {
   return state;
 }
 
-/**
- * Normal free-text chat turn. THE FIX: this now decides, in code, whether
- * the form should open (`showForm`), and the reply prompt is told the form
- * is already showing rather than being left to invent its own promise about
- * it. The frontend acts on `showForm` directly instead of trying to parse
- * intent out of the AI's sentence.
- */
 async function handleMessage({ key, channel, message }) {
   const state = getState(key);
+  state.channel = channel;
   const isFirstMessage = state.history.length === 0;
 
   state.history.push({ role: "user", content: message });
@@ -86,21 +85,14 @@ async function handleMessage({ key, channel, message }) {
   const missing = REQUIRED_BOOKING_FIELDS.filter((f) => !state[f]);
   const readyToBook = missing.length === 0 && state.wantsToBook !== false;
 
-  // Code decides whether to surface the form — not the LLM's wording.
-  // Trigger once: only if they seem to want booking and we haven't already
-  // shown it and gotten a submission (stage !== "booked").
   const shouldShowForm =
     state.stage !== "booked" &&
     !state.formShown &&
     (state.wantsToBook === true || Boolean(state.serviceNeeded));
 
-  if (shouldShowForm) {
-    state.formShown = true;
-  }
+  if (shouldShowForm) state.formShown = true;
 
   if (readyToBook && state.stage !== "booked") {
-    // Extremely unlikely via free text now that booking goes through the form,
-    // but kept as a safety net in case someone types every field in chat.
     state.stage = "booked";
     await persistAppointment(state);
   } else if (state.wantsToBook === false && state.fullName && state.stage === "new") {
@@ -126,12 +118,9 @@ async function handleMessage({ key, channel, message }) {
   };
 }
 
-/**
- * Deterministic booking from the widget's form. No LLM involved in deciding
- * what was booked, so the confirmation can never misstate it.
- */
 async function submitBookingForm({ key, channel, formData }) {
   const state = getState(key);
+  state.channel = channel;
 
   state.fullName = (formData.fullName || "").trim();
   state.phone = (formData.phone || "").trim();
