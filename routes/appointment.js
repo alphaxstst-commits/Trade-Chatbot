@@ -1,59 +1,42 @@
 // routes/appointment.js
 const express = require('express');
 const router = express.Router();
-const { appendToSheet } = require('../services/googleSheets');
-const { sendEmail } = require('../services/email');
+const { saveAppointment } = require('../services/googleSheets');
+const { sendAppointmentEmail } = require('../services/email');
 
 router.post('/', async (req, res) => {
   try {
     const { name, phone, email, service, date, time, notes } = req.body;
-    await appendToSheet(process.env.APPOINTMENTS_SHEET_ID, [
-      new Date().toISOString(),
-      name,
-      phone,
-      email,
-      service,
-      date,
-      time,
-      notes || '',
-      'Confirmed',
-    ]);
 
-    // Customer confirmation
-    const customerHtml = `
-      <h2>Appointment Confirmed</h2>
-      <p>Hi ${name},</p>
-      <p>Your ${service} appointment is scheduled for <strong>${date} at ${time}</strong>.</p>
-      <p>We'll send a reminder 24 hours before.</p>
-      <p>Thank you for choosing [BUSINESS NAME].</p>
-    `;
-    await sendEmail({
-      to: email,
-      subject: 'Appointment Confirmed',
-      html: customerHtml,
-    });
+    // Build the payload for saveAppointment
+    const payload = {
+      fullName: name || '',
+      phone: phone || '',
+      address: 'Not provided', // optional – add to form if needed
+      serviceNeeded: service || '',
+      preferredDateTime: `${date} ${time}`.trim(),
+      urgent: false,
+      notes: notes || '',
+      channel: 'website',
+    };
 
-    // Owner notification
-    const ownerHtml = `
-      <h2>New Appointment Booked</h2>
-      <p><strong>Name:</strong> ${name}</p>
-      <p><strong>Phone:</strong> ${phone}</p>
-      <p><strong>Email:</strong> ${email}</p>
-      <p><strong>Service:</strong> ${service}</p>
-      <p><strong>Date:</strong> ${date}</p>
-      <p><strong>Time:</strong> ${time}</p>
-      <p><strong>Notes:</strong> ${notes}</p>
-    `;
-    await sendEmail({
-      to: process.env.NOTIFY_EMAIL_TO,
-      subject: 'New Appointment Booked',
-      html: ownerHtml,
-    });
+    // Save to Google Sheets via webhook
+    const sheetResult = await saveAppointment(payload);
+    if (!sheetResult.ok) {
+      console.error('Sheet save failed:', sheetResult);
+    }
+
+    // Send email notifications via EmailJS
+    const emailResult = await sendAppointmentEmail(payload);
+    if (!emailResult) {
+      console.error('Email send failed');
+    }
 
     res.json({ success: true });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Failed to book appointment' });
+    console.error('Appointment error:', err.message);
+    console.error(err.stack);
+    res.status(500).json({ error: 'Failed to book appointment', details: err.message });
   }
 });
 
