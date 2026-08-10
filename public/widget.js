@@ -9,25 +9,19 @@
   var ACCENT = (scriptTag && scriptTag.getAttribute("data-accent")) || "#c9974c";
   var ACCENT_SOFT = "rgba(201,151,76,0.14)";
 
-  var SESSION_KEY = "trade_chatbot_session_id";
-  var sessionId = sessionStorage.getItem(SESSION_KEY);
-  if (!sessionId) {
-    sessionId = "sess_" + Date.now() + "_" + Math.random().toString(36).slice(2, 10);
-    sessionStorage.setItem(SESSION_KEY, sessionId);
-  }
-
-  var TRANSCRIPT_KEY = "trade_chatbot_transcript";
-  function loadTranscript() {
-    try { return JSON.parse(sessionStorage.getItem(TRANSCRIPT_KEY) || "[]"); } catch (e) { return []; }
-  }
-  function saveTranscript(t) { sessionStorage.setItem(TRANSCRIPT_KEY, JSON.stringify(t)); }
-  var transcript = loadTranscript();
-  var formAlreadyShown = transcript.some(function (i) { return i.kind === "form"; });
+  // Every page load starts a brand-new conversation on purpose — a plain
+  // in-memory id/array naturally resets on reload since the script re-runs
+  // from scratch. (Previously this used sessionStorage to survive refreshes
+  // mid-conversation; that's intentionally removed now per your request.)
+  var sessionId = "sess_" + Date.now() + "_" + Math.random().toString(36).slice(2, 10);
+  var transcript = [];
+  var formAlreadyShown = false;
 
   // ---------------------------------------------------------------- styles
   var style = document.createElement("style");
   style.textContent = `
     .ic-root, .ic-root * { box-sizing: border-box; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
+    .ic-root { text-align: left; line-height: normal; }
 
     .ic-btn {
       position: fixed; bottom: 22px; right: 22px; width: 60px; height: 60px; border-radius: 50%;
@@ -181,31 +175,23 @@
 
   function scrollDown() { messagesEl.scrollTop = messagesEl.scrollHeight; }
 
-  function addBubble(role, text, persist) {
+  function addBubble(role, text) {
     var div = document.createElement("div");
     div.className = "ic-msg " + (role === "user" ? "user" : "bot");
     div.textContent = text;
     messagesEl.appendChild(div);
     scrollDown();
-    if (persist !== false) {
-      transcript.push({ kind: "bubble", role: role, text: text });
-      saveTranscript(transcript);
-    }
   }
 
-  function addUrgentBanner(persist) {
+  function addUrgentBanner() {
     var div = document.createElement("div");
     div.className = "ic-urgent-banner";
     div.innerHTML = `This sounds urgent. Please call us right now at <a href="tel:${PHONE.replace(/[^0-9+]/g, "")}">${PHONE}</a>. You can also fill in the quick form below.`;
     messagesEl.appendChild(div);
     scrollDown();
-    if (persist !== false) {
-      transcript.push({ kind: "urgent" });
-      saveTranscript(transcript);
-    }
   }
 
-  function addQuickReplies(persist) {
+  function addQuickReplies() {
     var wrap = document.createElement("div");
     wrap.className = "ic-quickrow";
     var options = [
@@ -225,10 +211,6 @@
     });
     messagesEl.appendChild(wrap);
     scrollDown();
-    if (persist !== false) {
-      transcript.push({ kind: "quickrow" });
-      saveTranscript(transcript);
-    }
   }
 
   function handleQuickAction(action) {
@@ -278,7 +260,7 @@
     return opts;
   }
 
-  function showBookingForm(urgent, persist, prefillTrade, prefillService) {
+  function showBookingForm(urgent, prefillTrade, prefillService) {
     if (formAlreadyShown && !urgent) return; // avoid duplicate auto-triggers in the same session
     formAlreadyShown = true;
 
@@ -307,10 +289,6 @@
     `;
     messagesEl.appendChild(card);
     scrollDown();
-    if (persist !== false) {
-      transcript.push({ kind: "form", urgent: !!urgent });
-      saveTranscript(transcript);
-    }
 
     var submitBtn = card.querySelector(".ic-form-submit");
     submitBtn.addEventListener("click", async function () {
@@ -348,22 +326,9 @@
     });
   }
 
-  function renderRestoredTranscript() {
-    transcript.forEach(function (item) {
-      if (item.kind === "bubble") addBubble(item.role, item.text, false);
-      else if (item.kind === "quickrow") addQuickReplies(false);
-      else if (item.kind === "urgent") addUrgentBanner(false);
-      else if (item.kind === "form") showBookingForm(item.urgent, false);
-    });
-  }
-
   function greet() {
-    if (transcript.length === 0) {
-      addBubble("bot", `Hi, I am ${BOT_NAME}, the assistant for ${COMPANY}. We handle ${TAGLINE}. How can I help you today?`, true);
-      addQuickReplies(true);
-    } else {
-      renderRestoredTranscript();
-    }
+    addBubble("bot", `Hi, I am ${BOT_NAME}, the assistant for ${COMPANY}. We handle ${TAGLINE}. How can I help you today?`);
+    addQuickReplies();
   }
 
   var greeted = false;
@@ -397,7 +362,7 @@
         // THE FIX: open the form because the backend said to, not because
         // we tried to guess it from the sentence the AI wrote.
         if (data.showForm) {
-          showBookingForm(data.urgent, true, data.tradeGuess, data.serviceNeeded);
+          showBookingForm(data.urgent, data.tradeGuess, data.serviceNeeded);
         }
       } else {
         addBubble("bot", "Sorry, something went wrong. Please try again or call " + PHONE + ".", true);
