@@ -1,86 +1,52 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>TradePro Services</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz@14..32&display=swap" rel="stylesheet">
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-    body {
-      font-family: 'Inter', sans-serif;
-      background: #0d0d17;
-      color: #e0e0e0;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-    }
-    .hero {
-      text-align: center;
-      padding: 2rem;
-      max-width: 600px;
-    }
-    .hero h1 {
-      font-size: 3rem;
-      font-weight: 700;
-      background: linear-gradient(135deg, #9f9fdf, #6b6b9f);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      margin-bottom: 1rem;
-    }
-    .hero p {
-      color: #8888aa;
-      font-size: 1.1rem;
-      line-height: 1.7;
-    }
-    .badges {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      justify-content: center;
-      margin-top: 1.5rem;
-    }
-    .badge {
-      background: #1a1a2e;
-      border: 1px solid #2a2a4a;
-      padding: 6px 16px;
-      border-radius: 20px;
-      font-size: 0.85rem;
-      color: #aaaacc;
-    }
-    .footer-note {
-      margin-top: 2rem;
-      font-size: 0.8rem;
-      color: #444466;
-    }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Ironclad Home Services</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #0a0a0b;
+    color: #eceeef;
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 24px;
+  }
+  .hero { max-width: 560px; }
+  .hero h1 {
+    font-size: clamp(2rem, 5vw, 2.8rem);
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    color: #f2f2f0;
+  }
+  .hero p {
+    margin-top: 14px;
+    font-size: 1rem;
+    color: #9a9ea3;
+    line-height: 1.6;
+  }
+  .accent { color: #c9974c; }
+</style>
 </head>
 <body>
   <div class="hero">
-    <h1>🛠️ TradePro</h1>
-    <p>
-      Plumbing · HVAC · Excavation · Electrical · Handyman<br>
-      <span style="color:#666688;font-size:0.95rem;">Professional trades, done right.</span>
-    </p>
-    <div class="badges">
-      <span class="badge">✅ Licensed & Insured</span>
-      <span class="badge">⭐ 4.9/5 Rating</span>
-      <span class="badge">🚀 24/7 Emergency</span>
-    </div>
-    <p style="margin-top:1.5rem;color:#555577;font-size:0.9rem;">
-      Click the chat bubble below to start a conversation.
-    </p>
-    <div class="footer-note">
-      <span>💬 AI-powered assistant · Real humans on standby</span>
-    </div>
+    <h1>Ironclad <span class="accent">Home Services</span></h1>
+    <p>Plumbing, HVAC, excavation, electrical, and handyman work, done right. Chat with us in the corner to get started.</p>
   </div>
 
-  <script src="/widget.js"></script>
+  <script
+    src="/widget.js"
+    data-api="/api/chat"
+    data-company="Ironclad Home Services"
+    data-tagline="Plumbing, HVAC, Excavation, Electrical, Handyman"
+    data-bot-name="Nova"
+    data-phone="(555) 010-2030"
+    data-accent="#c9974c">
+  </script>
 </body>
 </html>

@@ -7,12 +7,13 @@ const {
   buildExtractionPrompt,
   buildReplyPrompt,
   buildGreeting,
-  BOT_NAME,
 } = require("../knowledge/businessScript");
 
 // ---------------------------------------------------------------------------
-// TODO INTEGRATION POINT — wire these to your real services/googleSheets.js
-// and services/email.js. Still placeholders until you send me those files.
+// TODO INTEGRATION POINT — still not wired to your real services/googleSheets.js
+// and services/email.js. This is why bookings/leads are not saving or emailing
+// yet. Send me those 3 files (googleSheets.js, email.js, whatsapp.js) and I will
+// wire this properly instead of guessing.
 // ---------------------------------------------------------------------------
 async function persistAppointment(state) {
   console.log("TODO: wire to services/googleSheets.js + services/email.js -> appointment:", {
@@ -51,7 +52,11 @@ function mergeExtracted(state, extracted) {
 }
 
 /**
- * Normal free-text chat turn (used for the "Ask a question" flow, and for WhatsApp).
+ * Normal free-text chat turn. THE FIX: this now decides, in code, whether
+ * the form should open (`showForm`), and the reply prompt is told the form
+ * is already showing rather than being left to invent its own promise about
+ * it. The frontend acts on `showForm` directly instead of trying to parse
+ * intent out of the AI's sentence.
  */
 async function handleMessage({ key, channel, message }) {
   const state = getState(key);
@@ -61,17 +66,17 @@ async function handleMessage({ key, channel, message }) {
 
   if (isEmergency(message)) {
     state.urgent = true;
-    const reply = `That sounds urgent — please call us right now at ${process.env.BUSINESS_PHONE || "our office"} for immediate help. I've flagged this as priority. Can you also share your name and address so a technician can be dispatched?`;
+    const reply = `That sounds urgent. Please call us right now at ${process.env.BUSINESS_PHONE || "our office"} for immediate help. I have flagged this as priority. You can also fill in the quick form below so a technician can be dispatched.`;
     state.history.push({ role: "assistant", content: reply });
     saveState(key, state);
-    return { reply, booked: false };
+    return { reply, booked: false, showForm: true, urgent: true, tradeGuess: state.tradeGuess, serviceNeeded: state.serviceNeeded };
   }
 
   if (isFirstMessage && /^\s*(hi|hello|hey|hola)\s*[!.]?\s*$/i.test(message)) {
     const reply = buildGreeting();
     state.history.push({ role: "assistant", content: reply });
     saveState(key, state);
-    return { reply, booked: false };
+    return { reply, booked: false, showForm: false };
   }
 
   const extractionPrompt = buildExtractionPrompt(state, message);
@@ -81,7 +86,21 @@ async function handleMessage({ key, channel, message }) {
   const missing = REQUIRED_BOOKING_FIELDS.filter((f) => !state[f]);
   const readyToBook = missing.length === 0 && state.wantsToBook !== false;
 
+  // Code decides whether to surface the form — not the LLM's wording.
+  // Trigger once: only if they seem to want booking and we haven't already
+  // shown it and gotten a submission (stage !== "booked").
+  const shouldShowForm =
+    state.stage !== "booked" &&
+    !state.formShown &&
+    (state.wantsToBook === true || Boolean(state.serviceNeeded));
+
+  if (shouldShowForm) {
+    state.formShown = true;
+  }
+
   if (readyToBook && state.stage !== "booked") {
+    // Extremely unlikely via free text now that booking goes through the form,
+    // but kept as a safety net in case someone types every field in chat.
     state.stage = "booked";
     await persistAppointment(state);
   } else if (state.wantsToBook === false && state.fullName && state.stage === "new") {
@@ -91,21 +110,25 @@ async function handleMessage({ key, channel, message }) {
     state.stage = "collecting";
   }
 
-  const replyPrompt = buildReplyPrompt(state, state.tradeGuess);
+  const replyPrompt = buildReplyPrompt(state, state.tradeGuess, shouldShowForm);
   const reply = await generateReply(replyPrompt, message);
 
   state.history.push({ role: "assistant", content: reply });
   saveState(key, state);
 
-  return { reply, booked: state.stage === "booked" };
+  return {
+    reply,
+    booked: state.stage === "booked",
+    showForm: shouldShowForm,
+    urgent: state.urgent,
+    tradeGuess: state.tradeGuess,
+    serviceNeeded: state.serviceNeeded,
+  };
 }
 
 /**
- * Deterministic booking from the widget's form — no LLM extraction needed
- * since the fields are already structured. This is both more reliable and
- * faster than round-tripping through chat. Confirmation text is also
- * deterministic (not LLM-generated) so it can never be wrong about what
- * was actually booked.
+ * Deterministic booking from the widget's form. No LLM involved in deciding
+ * what was booked, so the confirmation can never misstate it.
  */
 async function submitBookingForm({ key, channel, formData }) {
   const state = getState(key);
@@ -123,10 +146,10 @@ async function submitBookingForm({ key, channel, formData }) {
   saveState(key, state);
 
   const urgentLine = state.urgent
-    ? ` Since this is urgent, we've flagged it as a priority and our team will reach out shortly.`
+    ? " This has been flagged as a priority and our team will reach out shortly."
     : ` Our office will call ${state.phone} shortly to confirm the exact time.`;
 
-  const reply = `You're all set, ${state.fullName}! I've booked ${state.serviceNeeded} at ${state.address} for ${state.preferredDateTime}.${urgentLine} — ${BOT_NAME}`;
+  const reply = `You are all set, ${state.fullName}. I have booked ${state.serviceNeeded} at ${state.address} for ${state.preferredDateTime}.${urgentLine}`;
 
   return { reply, booked: true };
 }

@@ -1,5 +1,4 @@
 // services/openrouter.js
-
 async function callModel(systemPrompt, userMessage, { jsonMode = false } = {}) {
   const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
     method: "POST",

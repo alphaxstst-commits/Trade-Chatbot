@@ -3,11 +3,9 @@ const trades = require("./trades.json");
 
 const REQUIRED_BOOKING_FIELDS = ["fullName", "phone", "address", "serviceNeeded", "preferredDateTime"];
 
-// Mock company identity for the demo — override any of these with real env
-// vars later (BUSINESS_NAME, BOT_NAME, etc.) once this becomes a real client site.
 const COMPANY_NAME = process.env.BUSINESS_NAME || "Ironclad Home Services";
 const BOT_NAME = process.env.BOT_NAME || "Nova";
-const TAGLINE = process.env.BUSINESS_TAGLINE || "Plumbing · HVAC · Excavation · Electrical · Handyman";
+const TAGLINE = process.env.BUSINESS_TAGLINE || "Plumbing, HVAC, Excavation, Electrical, Handyman";
 
 const businessInfo = () => `
 Business name: ${COMPANY_NAME}
@@ -47,9 +45,8 @@ function knowledgeBlock(tradeKey) {
 
 function buildExtractionPrompt(state, latestMessage) {
   return `
-Extract structured info from the customer's latest message below. Return ONLY a JSON object, nothing else — no explanation, no markdown fences.
+Extract structured info from the customer's latest message below. Return ONLY a JSON object, nothing else.
 
-Fields to extract (use null for anything not present in the LATEST message):
 {
   "fullName": string or null,
   "phone": string or null,
@@ -77,29 +74,25 @@ Latest customer message: "${latestMessage}"
 `.trim();
 }
 
-function buildReplyPrompt(state, tradeKey) {
-  const missing = REQUIRED_BOOKING_FIELDS.filter((f) => !state[f]);
-  const known = REQUIRED_BOOKING_FIELDS.filter((f) => state[f]);
-
+function buildReplyPrompt(state, tradeKey, showForm) {
   return `
-You are ${BOT_NAME}, the professional AI front-desk assistant for ${COMPANY_NAME} (${TAGLINE}). Reply directly to the customer now — write ONLY the message they should see, nothing else.
+You are ${BOT_NAME}, the front-desk assistant for ${COMPANY_NAME} (${TAGLINE}). Reply directly to the customer now. Write ONLY the message they should see.
 
 BUSINESS INFO
 ${businessInfo()}
 
-CUSTOMER STATE SO FAR (do not ask about anything already known):
-${known.length ? known.map((f) => `- ${f}: ${state[f]}`).join("\n") : "- (nothing confirmed yet)"}
+${
+  showForm
+    ? "A booking form is being shown to the customer right now, automatically, at the same time as your reply. Do NOT say you will pull up a form or that a form is coming — it is already visible below your message. Just give one short, warm sentence acknowledging what they need, and mention the form is right there for them to fill in."
+    : "The customer is not in a booking flow right now — just answer their question naturally using the knowledge below."
+}
 
-STILL NEEDED before booking: ${missing.length ? missing.join(", ") : "nothing — all required info is present"}
-
-RULES
-- If the customer only wants information, answer from the knowledge below — don't push booking fields uninvited.
-- If they want to book, tell them you'll pull up the booking form rather than asking questions one by one in chat — the interface shows a form for that.
+STRICT STYLE RULES
+- Never use an em dash (—) anywhere in your reply. Use a period or comma instead.
+- Do not repeat back that you are "pulling up a form" more than once in a conversation.
 - Never invent prices or services not listed below.
-- Keep it to 2-4 sentences, plain language.
-- Never re-introduce yourself mid-conversation — that only happens once, at the very start.
-
-Urgent: ${state.urgent ? "YES — treat as priority" : "no"}
+- Keep it to 1-3 sentences, plain and natural, like a real person texting, not a script.
+- Never re-introduce yourself mid-conversation.
 
 KNOWLEDGE BASE
 ${knowledgeBlock(tradeKey)}
@@ -107,7 +100,7 @@ ${knowledgeBlock(tradeKey)}
 }
 
 function buildGreeting() {
-  return `Hi, I'm ${BOT_NAME} — the virtual assistant for ${COMPANY_NAME}. We handle ${TAGLINE}. How can I help you today?`;
+  return `Hi, I am ${BOT_NAME}, the assistant for ${COMPANY_NAME}. We handle ${TAGLINE}. How can I help you today?`;
 }
 
 module.exports = {
