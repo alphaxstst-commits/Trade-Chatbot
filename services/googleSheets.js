@@ -1,56 +1,36 @@
 // services/googleSheets.js
-//
-// Writes to your Google Sheet CRM via Apps Script Web App webhooks — the
-// GOOGLE_SHEETS_LEADS_WEBHOOK_URL and GOOGLE_SHEETS_APPOINTMENTS_WEBHOOK_URL
-// you already have set in Vercel. No service account needed.
+const { google } = require('googleapis');
 
-async function postToWebhook(url, payload) {
-  if (!url) {
-    console.error("googleSheets.js: webhook URL is not set in environment variables. Payload was:", payload);
-    return { ok: false, skipped: true };
-  }
+// Authenticate using the service account
+const auth = new google.auth.JWT(
+  process.env.GOOGLE_CLIENT_EMAIL,
+  null,
+  process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+  ['https://www.googleapis.com/auth/spreadsheets']
+);
+
+const sheets = google.sheets({ version: 'v4', auth });
+
+/**
+ * Append a row to a Google Sheet
+ * @param {string} sheetId - The spreadsheet ID
+ * @param {Array} values - Array of values for the new row
+ */
+async function appendToSheet(sheetId, values) {
   try {
-    const res = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-      redirect: "follow",
-    });
-    const text = await res.text();
-    if (!res.ok) {
-      console.error("googleSheets.js: webhook responded with an error:", res.status, text);
-    }
-    return { ok: res.ok, status: res.status, body: text };
+    const request = {
+      spreadsheetId: sheetId,
+      range: 'A:Z',
+      valueInputOption: 'USER_ENTERED',
+      insertDataOption: 'INSERT_ROWS',
+      resource: { values: [values] },
+    };
+    const result = await sheets.spreadsheets.values.append(request);
+    return result.data;
   } catch (err) {
-    console.error("googleSheets.js: request to webhook failed:", err);
-    return { ok: false, error: String(err) };
+    console.error('Google Sheets append error:', err.message);
+    throw err;
   }
 }
 
-async function saveAppointment(appt) {
-  return postToWebhook(process.env.GOOGLE_SHEETS_APPOINTMENTS_WEBHOOK_URL, {
-    timestamp: new Date().toISOString(),
-    fullName: appt.fullName || "",
-    phone: appt.phone || "",
-    address: appt.address || "",
-    serviceNeeded: appt.serviceNeeded || "",
-    preferredDateTime: appt.preferredDateTime || "",
-    urgent: appt.urgent ? "URGENT" : "normal",
-    notes: appt.notes || "",
-    channel: appt.channel || "website",
-    status: "Pending confirmation",
-  });
-}
-
-async function saveLead(lead) {
-  return postToWebhook(process.env.GOOGLE_SHEETS_LEADS_WEBHOOK_URL, {
-    timestamp: new Date().toISOString(),
-    fullName: lead.fullName || "",
-    phone: lead.phone || "",
-    email: lead.email || "",
-    interest: lead.interest || lead.serviceNeeded || "",
-    channel: lead.channel || "website",
-  });
-}
-
-module.exports = { saveAppointment, saveLead };
+module.exports = { appendToSheet };
