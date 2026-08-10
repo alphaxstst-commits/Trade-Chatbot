@@ -29,15 +29,9 @@ async function callModel(systemPrompt, userMessage, { jsonMode = false } = {}) {
   return data.choices[0].message.content || "";
 }
 
-/**
- * CALL #1 — structured extraction. Returns a parsed object, or {} if the
- * model didn't return valid JSON (fails safe rather than throwing, so a bad
- * extraction never crashes the conversation).
- */
 async function extractFields(extractionPrompt, latestMessage) {
   const raw = await callModel(extractionPrompt, latestMessage, { jsonMode: true });
   try {
-    // Strip markdown fences if the model added them despite instructions.
     const cleaned = raw.replace(/```json|```/g, "").trim();
     return JSON.parse(cleaned);
   } catch (e) {
@@ -46,9 +40,6 @@ async function extractFields(extractionPrompt, latestMessage) {
   }
 }
 
-/**
- * CALL #2 — reply generation. Returns plain text meant for the customer.
- */
 async function generateReply(replyPrompt, latestMessage) {
   return callModel(replyPrompt, latestMessage, { jsonMode: false });
 }

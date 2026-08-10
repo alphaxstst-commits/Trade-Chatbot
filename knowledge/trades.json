@@ -49,20 +49,34 @@
     ],
     "emergencyKeywords": ["burst main utility line", "urgent flooding drainage"]
   },
-  "homebuilders": {
-    "trade": "Home Builders",
-    "summary": "Custom home construction, additions, and major renovations.",
+  "electrical": {
+    "trade": "Electrical",
+    "summary": "Residential electrical repair, panel upgrades, and installation work.",
     "services": [
-      { "name": "Custom Home Construction", "description": "Ground-up custom home builds.", "typicalPriceRange": "$150 - $350 per sq ft", "emergencyAvailable": false },
-      { "name": "Home Additions", "description": "Extra bedrooms, bathrooms, second stories, in-law suites.", "typicalPriceRange": "$25,000 - $150,000+", "emergencyAvailable": false },
-      { "name": "Kitchen Remodeling", "description": "Full/partial kitchen remodels.", "typicalPriceRange": "$15,000 - $75,000", "emergencyAvailable": false },
-      { "name": "Bathroom Remodeling", "description": "Full/partial bathroom remodels.", "typicalPriceRange": "$8,000 - $35,000", "emergencyAvailable": false },
-      { "name": "Storm / Damage Restoration", "description": "Structural repair after fire/storm/water damage.", "typicalPriceRange": "Varies by damage/insurance", "emergencyAvailable": true }
+      { "name": "Electrical Repair", "description": "Fixing outlets, switches, flickering lights, tripped breakers, wiring issues.", "typicalPriceRange": "$120 - $500", "emergencyAvailable": true },
+      { "name": "Panel Upgrade", "description": "Upgrading old or undersized electrical panels to modern capacity.", "typicalPriceRange": "$1,500 - $4,000", "emergencyAvailable": false },
+      { "name": "Lighting Installation", "description": "Indoor/outdoor lighting, ceiling fans, recessed lighting.", "typicalPriceRange": "$150 - $800", "emergencyAvailable": false },
+      { "name": "EV Charger Installation", "description": "Home EV charging station installation.", "typicalPriceRange": "$500 - $2,000", "emergencyAvailable": false },
+      { "name": "Whole-Home Rewiring", "description": "Rewiring older homes for safety and capacity.", "typicalPriceRange": "$4,000 - $15,000", "emergencyAvailable": false }
     ],
     "faqs": [
-      { "q": "Handle permits?", "a": "Yes, we coordinate drawings and permit submissions." },
-      { "q": "Custom home timeline?", "a": "Typically 6-12 months depending on size and permitting." }
+      { "q": "Breaker keeps tripping, is that dangerous?", "a": "It can indicate an overloaded circuit or a fault — treat it as a priority repair, don't just keep resetting it." },
+      { "q": "Do you handle permits for panel upgrades?", "a": "Yes, panel upgrades typically require a permit and inspection, which we coordinate." }
     ],
-    "emergencyKeywords": ["structural collapse", "storm damage roof caved", "fire damage"]
+    "emergencyKeywords": ["sparking outlet", "burning smell electrical", "exposed wire", "power out entire house"]
+  },
+  "handyman": {
+    "trade": "Handyman",
+    "summary": "General home repair and small project work that doesn't need a specialty trade.",
+    "services": [
+      { "name": "General Repairs", "description": "Drywall patching, door/window adjustments, small fixes.", "typicalPriceRange": "$80 - $300", "emergencyAvailable": false },
+      { "name": "Furniture Assembly & Mounting", "description": "TV mounting, shelving, furniture assembly.", "typicalPriceRange": "$60 - $250", "emergencyAvailable": false },
+      { "name": "Painting (small jobs)", "description": "Touch-ups and small room painting.", "typicalPriceRange": "$150 - $600", "emergencyAvailable": false },
+      { "name": "Weatherproofing", "description": "Caulking, weatherstripping, minor sealing work.", "typicalPriceRange": "$100 - $400", "emergencyAvailable": false }
+    ],
+    "faqs": [
+      { "q": "What counts as a handyman job vs a specialty trade?", "a": "Small, general fixes and installs. Anything involving gas lines, main electrical panels, or structural work gets routed to the right specialty trade instead." }
+    ],
+    "emergencyKeywords": []
   }
 }
