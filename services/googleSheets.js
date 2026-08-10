@@ -1,7 +1,6 @@
 // services/googleSheets.js
 const { google } = require('googleapis');
 
-// Authenticate using the service account
 const auth = new google.auth.JWT(
   process.env.GOOGLE_CLIENT_EMAIL,
   null,
@@ -12,9 +11,7 @@ const auth = new google.auth.JWT(
 const sheets = google.sheets({ version: 'v4', auth });
 
 /**
- * Append a row to a Google Sheet
- * @param {string} sheetId - The spreadsheet ID
- * @param {Array} values - Array of values for the new row
+ * Append a row to a Google Sheet (original function)
  */
 async function appendToSheet(sheetId, values) {
   try {
@@ -33,4 +30,39 @@ async function appendToSheet(sheetId, values) {
   }
 }
 
-module.exports = { appendToSheet };
+/**
+ * Wrapper for agent – saves an appointment
+ */
+async function saveAppointment(payload) {
+  const row = [
+    new Date().toISOString(),
+    payload.fullName || '',
+    payload.phone || '',
+    payload.address || '',
+    payload.serviceNeeded || '',
+    payload.preferredDateTime || '',
+    payload.urgent ? 'URGENT' : 'normal',
+    payload.notes || '',
+    payload.channel || 'website',
+    'Pending confirmation',
+  ];
+  return appendToSheet(process.env.APPOINTMENTS_SHEET_ID, row);
+}
+
+/**
+ * Wrapper for agent – saves a lead
+ */
+async function saveLead(payload) {
+  const row = [
+    new Date().toISOString(),
+    payload.fullName || '',
+    payload.phone || '',
+    payload.email || '',
+    payload.serviceNeeded || payload.interest || '',
+    payload.channel || 'website',
+    'New',
+  ];
+  return appendToSheet(process.env.LEADS_SHEET_ID, row);
+}
+
+module.exports = { appendToSheet, saveAppointment, saveLead };
