@@ -65,10 +65,10 @@ async function handleMessage({ key, channel, message }) {
 
   if (isEmergency(message)) {
     state.urgent = true;
-    const reply = `That sounds urgent. Please call us right now at ${process.env.BUSINESS_PHONE || "our office"} for immediate help. I have flagged this as priority. You can also fill in the quick form below so a technician can be dispatched.`;
+    const reply = `That sounds urgent. Please call us right now at ${process.env.BUSINESS_PHONE || "our office"} for immediate help. I have flagged this as priority.${channel === "website" ? " You can also fill in the quick form below so a technician can be dispatched." : " Can you also share your name and address so a technician can be dispatched?"}`;
     state.history.push({ role: "assistant", content: reply });
     saveState(key, state);
-    return { reply, booked: false, showForm: true, urgent: true, tradeGuess: state.tradeGuess, serviceNeeded: state.serviceNeeded };
+    return { reply, booked: false, showForm: channel === "website", urgent: true, tradeGuess: state.tradeGuess, serviceNeeded: state.serviceNeeded };
   }
 
   if (isFirstMessage && /^\s*(hi|hello|hey|hola)\s*[!.]?\s*$/i.test(message)) {
@@ -85,7 +85,11 @@ async function handleMessage({ key, channel, message }) {
   const missing = REQUIRED_BOOKING_FIELDS.filter((f) => !state[f]);
   const readyToBook = missing.length === 0 && state.wantsToBook !== false;
 
+  // showForm only ever means something on the website widget, which is the
+  // only channel that can render an actual form. WhatsApp is text-only, so
+  // it always collects the same fields conversationally instead.
   const shouldShowForm =
+    channel === "website" &&
     state.stage !== "booked" &&
     !state.formShown &&
     (state.wantsToBook === true || Boolean(state.serviceNeeded));
@@ -102,7 +106,7 @@ async function handleMessage({ key, channel, message }) {
     state.stage = "collecting";
   }
 
-  const replyPrompt = buildReplyPrompt(state, state.tradeGuess, shouldShowForm);
+  const replyPrompt = buildReplyPrompt(state, state.tradeGuess, shouldShowForm, channel);
   const reply = await generateReply(replyPrompt, message);
 
   state.history.push({ role: "assistant", content: reply });
