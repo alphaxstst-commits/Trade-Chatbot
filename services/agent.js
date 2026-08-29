@@ -85,9 +85,6 @@ async function handleMessage({ key, channel, message }) {
   const missing = REQUIRED_BOOKING_FIELDS.filter((f) => !state[f]);
   const readyToBook = missing.length === 0 && state.wantsToBook !== false;
 
-  // showForm only ever means something on the website widget, which is the
-  // only channel that can render an actual form. WhatsApp is text-only, so
-  // it always collects the same fields conversationally instead.
   const shouldShowForm =
     channel === "website" &&
     state.stage !== "booked" &&
@@ -96,7 +93,9 @@ async function handleMessage({ key, channel, message }) {
 
   if (shouldShowForm) state.formShown = true;
 
-  if (readyToBook && state.stage !== "booked") {
+  const justBooked = readyToBook && state.stage !== "booked";
+
+  if (justBooked) {
     state.stage = "booked";
     await persistAppointment(state);
   } else if (state.wantsToBook === false && state.fullName && state.stage === "new") {
@@ -106,8 +105,8 @@ async function handleMessage({ key, channel, message }) {
     state.stage = "collecting";
   }
 
-  const replyPrompt = buildReplyPrompt(state, state.tradeGuess, shouldShowForm, channel);
-  const reply = await generateReply(replyPrompt, message);
+  const replyPrompt = buildReplyPrompt(state, state.tradeGuess, shouldShowForm, channel, justBooked);
+  const reply = await generateReply(replyPrompt, state.history);
 
   state.history.push({ role: "assistant", content: reply });
   saveState(key, state);
@@ -136,6 +135,8 @@ async function submitBookingForm({ key, channel, formData }) {
   state.stage = "booked";
 
   await persistAppointment(state);
+
+  state.history.push({ role: "assistant", content: `[Booking confirmed via form: ${state.serviceNeeded} at ${state.address} on ${state.preferredDateTime}]` });
   saveState(key, state);
 
   const urgentLine = state.urgent
