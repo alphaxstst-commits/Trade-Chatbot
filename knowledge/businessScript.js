@@ -44,8 +44,13 @@ function knowledgeBlock(tradeKey) {
 }
 
 function buildExtractionPrompt(state, latestMessage) {
+  const today = new Date();
+  const todayStr = today.toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" });
+
   return `
 Extract structured info from the customer's latest message below. Return ONLY a JSON object, nothing else.
+
+Today's date is ${todayStr}. Use this to resolve any relative or partial dates the customer mentions (e.g. "tomorrow," "next Monday," "5 sep," "in 3 days").
 
 {
   "fullName": string or null,
@@ -56,6 +61,12 @@ Extract structured info from the customer's latest message below. Return ONLY a 
   "wantsToBook": true | false | null,
   "tradeGuess": one of "hvac", "plumbing", "excavation", "electrical", "handyman", or null
 }
+
+If the latest message mentions a date and/or time for the appointment, normalize "preferredDateTime" into exactly one of these two formats, do not return the customer's raw wording:
+- If an exact time is given: "Ddd, Mon D, h:mm AM/PM" (example: "Fri, Sep 5, 11:00 AM")
+- If only a rough time of day is given (morning, afternoon, etc, no exact time): "Ddd, Mon D, <bucket>" where bucket is one of: Morning (8am - 11am), Midday (11am - 2pm), Afternoon (2pm - 5pm), Evening (5pm - 7pm), As soon as possible
+
+If no date or time is mentioned in the latest message at all, return null for preferredDateTime, do not guess one.
 
 Already known about this customer:
 ${JSON.stringify(
@@ -82,7 +93,7 @@ const FIELD_LABELS = {
   preferredDateTime: "Preferred Date/Time",
 };
 
-function buildReplyPrompt(state, tradeKey, showForm, channel) {
+function buildReplyPrompt(state, tradeKey, showForm, channel, justBooked) {
   const missing = REQUIRED_BOOKING_FIELDS.filter((f) => !state[f]);
   const known = REQUIRED_BOOKING_FIELDS.filter((f) => state[f]);
 
@@ -90,7 +101,7 @@ function buildReplyPrompt(state, tradeKey, showForm, channel) {
   if (channel === "website" && showForm) {
     flowInstruction =
       "A booking form is being shown to the customer right now, automatically, at the same time as your reply. Do NOT say you will pull up a form or that a form is coming, it is already visible below your message. Just give one short, warm sentence acknowledging what they need, and mention the form is right there for them to fill in.";
-  } else if (channel === "whatsapp") {
+  } else if (channel === "whatsapp" && state.stage !== "booked") {
     const missingTemplate = missing.map((f) => `${FIELD_LABELS[f]}: `).join("\n");
     flowInstruction = `This conversation is happening over WhatsApp text messages only. There is no form, button, or visual interface of any kind, never mention or refer to a "form" or anything they need to "fill out" or "click."
 
@@ -106,12 +117,18 @@ Do not add extra punctuation or change the template field names. Only include li
     ? `Only one detail is still needed (${FIELD_LABELS[missing[0]]}), just ask for it directly in one short plain sentence, no template needed for a single field.`
     : `All required info is present. This message should be a warm plain-text confirmation that the appointment is booked, do not ask further questions.`
 }`;
+  } else if (state.stage === "booked" && justBooked) {
+    flowInstruction =
+      "The appointment was JUST booked in this exact turn. Confirm it clearly once, in plain text, stating the service, address, and time.";
+  } else if (state.stage === "booked" && !justBooked) {
+    flowInstruction =
+      'The appointment was already booked earlier in this conversation, do NOT restate or re-confirm the booking again unless the customer explicitly asks about their appointment status. Just respond naturally to whatever they just said, based on the actual conversation history you can see. If they said something like "ok" or "thanks" with nothing else to address, a brief natural acknowledgment is enough, e.g. "You are welcome, let us know if you need anything else."';
   } else {
-    flowInstruction = "The customer is not in a booking flow right now, just answer their question naturally using the knowledge below.";
+    flowInstruction = "The customer is not in a booking flow right now, just answer their question naturally using the knowledge below, based on the actual conversation history you can see.";
   }
 
   return `
-You are ${BOT_NAME}, the front-desk assistant for ${COMPANY_NAME} (${TAGLINE}). Reply directly to the customer now. Write ONLY the message they should see.
+You are ${BOT_NAME}, the front-desk assistant for ${COMPANY_NAME} (${TAGLINE}). You can see the full conversation history above this message, use it, do not treat each message as if it's the first one. Reply directly to the customer now. Write ONLY the message they should see.
 
 BUSINESS INFO
 ${businessInfo()}
@@ -119,7 +136,6 @@ ${businessInfo()}
 CONTEXT: the customer's service of interest, from earlier in this same conversation (this stays true for the rest of the conversation, including after booking):
 ${state.serviceNeeded ? `"${state.serviceNeeded}"` : "not yet mentioned"}
 ${state.tradeGuess ? `Trade: ${state.tradeGuess}` : ""}
-${state.stage === "booked" ? "This has already been booked. If they ask about cost, timing, or details of it, they mean this service. Answer directly using the knowledge below, do not ask them to repeat or clarify what service they mean." : ""}
 
 If the customer asks a vague follow-up like "how much is it," "the one I picked," or "that service," they are referring to the CONTEXT above, resolve it yourself using the conversation, never ask them to re-specify something already established here.
 
