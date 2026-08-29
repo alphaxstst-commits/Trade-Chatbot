@@ -1,5 +1,6 @@
 // services/openrouter.js
-async function callModel(systemPrompt, userMessage, { jsonMode = false } = {}) {
+
+async function callModel(messages, { jsonMode = false } = {}) {
   const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
     method: "POST",
     headers: {
@@ -10,10 +11,7 @@ async function callModel(systemPrompt, userMessage, { jsonMode = false } = {}) {
     },
     body: JSON.stringify({
       model: process.env.OPENROUTER_MODEL || "openai/gpt-4o-mini",
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userMessage },
-      ],
+      messages,
       temperature: jsonMode ? 0 : 0.4,
       max_tokens: jsonMode ? 300 : 500,
     }),
@@ -29,7 +27,13 @@ async function callModel(systemPrompt, userMessage, { jsonMode = false } = {}) {
 }
 
 async function extractFields(extractionPrompt, latestMessage) {
-  const raw = await callModel(extractionPrompt, latestMessage, { jsonMode: true });
+  const raw = await callModel(
+    [
+      { role: "system", content: extractionPrompt },
+      { role: "user", content: latestMessage },
+    ],
+    { jsonMode: true }
+  );
   try {
     const cleaned = raw.replace(/```json|```/g, "").trim();
     return JSON.parse(cleaned);
@@ -39,8 +43,10 @@ async function extractFields(extractionPrompt, latestMessage) {
   }
 }
 
-async function generateReply(replyPrompt, latestMessage) {
-  return callModel(replyPrompt, latestMessage, { jsonMode: false });
+async function generateReply(replyPrompt, history) {
+  const trimmedHistory = history.slice(-16);
+  const messages = [{ role: "system", content: replyPrompt }, ...trimmedHistory];
+  return callModel(messages, { jsonMode: false });
 }
 
 module.exports = { extractFields, generateReply };
