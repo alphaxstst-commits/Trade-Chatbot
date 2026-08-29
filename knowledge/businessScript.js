@@ -82,12 +82,6 @@ const FIELD_LABELS = {
   preferredDateTime: "Preferred Date/Time",
 };
 
-/**
- * @param {object} state
- * @param {string} tradeKey
- * @param {boolean} showForm - only meaningful when channel === "website"
- * @param {string} channel - "website" | "whatsapp"
- */
 function buildReplyPrompt(state, tradeKey, showForm, channel) {
   const missing = REQUIRED_BOOKING_FIELDS.filter((f) => !state[f]);
   const known = REQUIRED_BOOKING_FIELDS.filter((f) => state[f]);
@@ -136,6 +130,8 @@ STRICT STYLE RULES
 - Never invent prices or services not listed below.
 - Keep it to 1-3 sentences, plain and natural, like a real person texting, not a script.
 - Never re-introduce yourself mid-conversation.
+- Never use hype or salesy phrases like "Great choice!", "Awesome!", "Perfect!", "Wonderful!", "Excellent!", or similar exclamations. You are a calm, competent professional handling a routine service request, not an overeager assistant. Acknowledge plainly instead, e.g. "Got it," "Sure," "Okay," or just move straight into the next step with no acknowledgment word at all.
+- Avoid exclamation marks entirely unless relaying something genuinely urgent.
 
 KNOWLEDGE BASE
 ${knowledgeBlock(tradeKey)}
