@@ -156,4 +156,4 @@ module.exports = {
   COMPANY_NAME,
   BOT_NAME,
   TAGLINE,
-}; 
+};
