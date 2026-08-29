@@ -74,6 +74,14 @@ Latest customer message: "${latestMessage}"
 `.trim();
 }
 
+const FIELD_LABELS = {
+  fullName: "Name",
+  phone: "Phone",
+  address: "Address",
+  serviceNeeded: "Service",
+  preferredDateTime: "Preferred Date/Time",
+};
+
 /**
  * @param {object} state
  * @param {string} tradeKey
@@ -89,12 +97,21 @@ function buildReplyPrompt(state, tradeKey, showForm, channel) {
     flowInstruction =
       "A booking form is being shown to the customer right now, automatically, at the same time as your reply. Do NOT say you will pull up a form or that a form is coming, it is already visible below your message. Just give one short, warm sentence acknowledging what they need, and mention the form is right there for them to fill in.";
   } else if (channel === "whatsapp") {
-    flowInstruction = `This conversation is happening over WhatsApp text messages only. There is no form, button, or visual interface of any kind, never mention or refer to a "form" or anything they need to "fill out" or "click." If they want to book, collect the missing details below directly through normal conversation, asking for what's still needed in plain text, one or two items per message.
+    const missingTemplate = missing.map((f) => `${FIELD_LABELS[f]}: `).join("\n");
+    flowInstruction = `This conversation is happening over WhatsApp text messages only. There is no form, button, or visual interface of any kind, never mention or refer to a "form" or anything they need to "fill out" or "click."
 
-Already known: ${known.length ? known.map((f) => `${f}: ${state[f]}`).join(", ") : "nothing yet"}
-Still needed: ${missing.length ? missing.join(", ") : "nothing, all required info is present"}
+Already known: ${known.length ? known.map((f) => `${FIELD_LABELS[f]}: ${state[f]}`).join(", ") : "nothing yet"}
+Still needed: ${missing.length ? missing.map((f) => FIELD_LABELS[f]).join(", ") : "nothing, all required info is present"}
 
-If nothing is still needed, this message should be a warm plain-text confirmation that the appointment is booked, do not ask further questions.`;
+${
+  missing.length >= 2
+    ? `When 2 or more details are still needed (as is the case now), do NOT ask for them in a prose sentence. Instead, write one short warm opening line, then paste this exact template on its own lines so the customer can copy it and fill it in directly:
+${missingTemplate}
+Do not add extra punctuation or change the template field names. Only include lines for fields listed as "Still needed" above, never repeat fields already known.`
+    : missing.length === 1
+    ? `Only one detail is still needed (${FIELD_LABELS[missing[0]]}), just ask for it directly in one short plain sentence, no template needed for a single field.`
+    : `All required info is present. This message should be a warm plain-text confirmation that the appointment is booked, do not ask further questions.`
+}`;
   } else {
     flowInstruction = "The customer is not in a booking flow right now, just answer their question naturally using the knowledge below.";
   }
