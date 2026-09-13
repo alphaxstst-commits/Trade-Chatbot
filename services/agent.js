@@ -21,8 +21,17 @@ async function persistAppointment(state) {
     urgent: state.urgent,
     channel: state.channel || "website",
   };
-  const sheetResult = await saveAppointment(payload);
-  const emailResult = await sendAppointmentEmail(payload);
+
+  const startedAt = Date.now();
+  console.log(`persistAppointment: starting (channel=${payload.channel})`);
+
+  const [sheetResult, emailResult] = await Promise.all([
+    saveAppointment(payload),
+    sendAppointmentEmail(payload),
+  ]);
+
+  console.log(`persistAppointment: finished in ${Date.now() - startedAt}ms, sheet.ok=${sheetResult.ok}, email.ok=${emailResult}`);
+
   if (!sheetResult.ok) console.error("persistAppointment: Sheets save failed", sheetResult);
   if (!emailResult) console.error("persistAppointment: email send failed");
 }
@@ -34,8 +43,12 @@ async function persistLead(state) {
     serviceNeeded: state.serviceNeeded,
     channel: state.channel || "website",
   };
-  const sheetResult = await saveLead(payload);
-  const emailResult = await sendLeadEmail(payload);
+
+  const [sheetResult, emailResult] = await Promise.all([
+    saveLead(payload),
+    sendLeadEmail(payload),
+  ]);
+
   if (!sheetResult.ok) console.error("persistLead: Sheets save failed", sheetResult);
   if (!emailResult) console.error("persistLead: email send failed");
 }
