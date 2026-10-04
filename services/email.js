@@ -30,8 +30,9 @@ async function sendAppointmentEmail(payload) {
     <h2>New Appointment Booked</h2>
     <p><strong>Name:</strong> ${payload.fullName}</p>
     <p><strong>Phone:</strong> ${payload.phone}</p>
+    <p><strong>Email:</strong> ${payload.email || 'Not provided'}</p>
     <p><strong>Address:</strong> ${payload.address}</p>
-    <p><strong>Service:</strong> ${payload.serviceNeeded}</p>
+    <p><strong>Service:</strong> ${payload.tradeGuess ? payload.tradeGuess + ' - ' : ''}${payload.serviceNeeded}</p>
     <p><strong>Preferred Time:</strong> ${payload.preferredDateTime}</p>
     <p><strong>Urgent:</strong> ${payload.urgent ? 'YES' : 'No'}</p>
     <p><strong>Notes:</strong> ${payload.notes || 'None'}</p>
