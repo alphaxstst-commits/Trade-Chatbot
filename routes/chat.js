@@ -3,6 +3,8 @@ const express = require("express");
 const router = express.Router();
 const { handleMessage, submitBookingForm } = require("../services/agent");
 
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 router.post("/", async (req, res) => {
   try {
     const { message, sessionId, bookingForm } = req.body || {};
@@ -12,10 +14,13 @@ router.post("/", async (req, res) => {
     }
 
     if (bookingForm && typeof bookingForm === "object") {
-      const required = ["fullName", "phone", "address", "serviceNeeded", "preferredDateTime"];
+      const required = ["fullName", "phone", "email", "address", "serviceNeeded", "preferredDateTime"];
       const missing = required.filter((f) => !bookingForm[f] || !String(bookingForm[f]).trim());
       if (missing.length) {
         return res.status(400).json({ error: `Missing required booking fields: ${missing.join(", ")}` });
+      }
+      if (!EMAIL_RE.test(String(bookingForm.email).trim())) {
+        return res.status(400).json({ error: "Please enter a valid email address." });
       }
       const result = await submitBookingForm({ key: `web:${sessionId}`, channel: "website", formData: bookingForm });
       return res.json({ reply: result.reply, booked: result.booked });
