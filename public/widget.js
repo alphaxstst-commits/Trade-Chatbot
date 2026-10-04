@@ -1,4 +1,4 @@
-﻿(function () {
+(function () {
   var scriptTag = document.currentScript;
   var API_URL = (scriptTag && scriptTag.getAttribute("data-api")) || "/api/chat";
   var COMPANY = (scriptTag && scriptTag.getAttribute("data-company")) || "Ironclad Home Services";
@@ -9,10 +9,9 @@
   var ACCENT = (scriptTag && scriptTag.getAttribute("data-accent")) || "#c9974c";
   var ACCENT_SOFT = "rgba(201,151,76,0.14)";
 
-  // Every page load starts a brand-new conversation on purpose â€” a plain
+  // Every page load starts a brand-new conversation on purpose - a plain
   // in-memory id/array naturally resets on reload since the script re-runs
-  // from scratch. (Previously this used sessionStorage to survive refreshes
-  // mid-conversation; that's intentionally removed now per your request.)
+  // from scratch.
   var sessionId = "sess_" + Date.now() + "_" + Math.random().toString(36).slice(2, 10);
   var transcript = [];
   var formAlreadyShown = false;
@@ -84,11 +83,11 @@
     .ic-urgent-banner a { color: #f0c4b8; font-weight: 700; text-decoration: none; }
 
     .ic-form-card {
-      align-self: stretch; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);
+      align-self: stretch; flex-shrink: 0; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);
       border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 9px;
     }
     .ic-form-title { color: #f2f2f0; font-size: 12.5px; font-weight: 600; margin-bottom: 2px; letter-spacing: 0.3px; text-transform: uppercase; opacity: 0.85; }
-    .ic-form-card input, .ic-form-card select {
+    .ic-form-card input[type="text"], .ic-form-card input[type="tel"], .ic-form-card input[type="email"], .ic-form-card select {
       width: 100%; padding: 9px 11px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);
       background: rgba(255,255,255,0.03); color: #f2f2f0; font-size: 13px; outline: none;
     }
@@ -98,7 +97,8 @@
     .ic-form-card input:focus, .ic-form-card select:focus { border-color: ${ACCENT}; }
     .ic-form-row { display: flex; gap: 8px; }
     .ic-form-row > * { flex: 1; min-width: 0; }
-    .ic-form-check { display: flex; align-items: center; gap: 8px; color: #b9bbbe; font-size: 12.5px; }
+    .ic-form-check { display: flex; align-items: center; justify-content: flex-start; gap: 8px; color: #b9bbbe; font-size: 12.5px; }
+    .ic-form-check input[type="checkbox"] { width: auto; flex: 0 0 auto; margin: 0; }
     .ic-form-submit {
       margin-top: 4px; padding: 10px; border-radius: 8px; border: none; cursor: pointer;
       background: ${ACCENT}; color: #14110a; font-weight: 700; font-size: 13px;
@@ -215,15 +215,15 @@
 
   function handleQuickAction(action) {
     if (action === "book") {
-      addBubble("user", "Book a service", true);
+      addBubble("user", "Book a service");
       showBookingForm();
     } else if (action === "ask") {
-      addBubble("user", "I have a question", true);
-      addBubble("bot", "Go ahead, ask about pricing, services, or anything else.", true);
+      addBubble("user", "I have a question");
+      addBubble("bot", "Go ahead, ask about pricing, services, or anything else.");
       inputEl.focus();
     } else if (action === "urgent") {
-      addBubble("user", "This is urgent", true);
-      addUrgentBanner(true);
+      addBubble("user", "This is urgent");
+      addUrgentBanner();
       showBookingForm(true);
     }
   }
@@ -243,6 +243,8 @@
     { value: "evening", label: "Evening (5pm - 7pm)" },
     { value: "asap", label: "As soon as possible" },
   ];
+
+  var EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
   function buildDateOptions() {
     var days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -277,6 +279,7 @@
       <div class="ic-form-title">${urgent ? "Priority booking" : "Book a service"}</div>
       <input type="text" placeholder="Full name" data-field="fullName" />
       <input type="tel" placeholder="Phone number" data-field="phone" />
+      <input type="email" placeholder="Email address" data-field="email" autocomplete="email" />
       <input type="text" placeholder="Service address" data-field="address" />
       <select data-field="tradeGuess">${tradeOptionsHtml}</select>
       <input type="text" placeholder="What do you need done?" data-field="serviceNeeded" value="${prefillService ? prefillService.replace(/"/g, "&quot;") : ""}" />
@@ -284,13 +287,19 @@
         <select data-field="dateSelect">${dateOptionsHtml}</select>
         <select data-field="timeSelect">${timeOptionsHtml}</select>
       </div>
-      <label class="ic-form-check"><input type="checkbox" data-field="urgent" ${urgent ? "checked" : ""} /> This is urgent</label>
+      <label class="ic-form-check"><input type="checkbox" data-field="urgent" ${urgent ? "checked" : ""} /> <span>This is urgent</span></label>
       <button class="ic-form-submit">Book appointment</button>
     `;
     messagesEl.appendChild(card);
     scrollDown();
 
     var submitBtn = card.querySelector(".ic-form-submit");
+
+    function flashError(msg) {
+      submitBtn.textContent = msg;
+      setTimeout(function () { submitBtn.textContent = "Book appointment"; }, 1800);
+    }
+
     submitBtn.addEventListener("click", async function () {
       var data = {};
       card.querySelectorAll("[data-field]").forEach(function (el) {
@@ -301,11 +310,15 @@
       delete data.dateSelect;
       delete data.timeSelect;
 
-      if (!data.fullName || !data.phone || !data.address || !data.serviceNeeded) {
-        submitBtn.textContent = "Please fill all fields";
-        setTimeout(function () { submitBtn.textContent = "Book appointment"; }, 1800);
+      if (!data.fullName || !data.phone || !data.email || !data.address || !data.serviceNeeded) {
+        flashError("Please fill all fields");
         return;
       }
+      if (!EMAIL_RE.test(data.email)) {
+        flashError("Please enter a valid email");
+        return;
+      }
+
       submitBtn.disabled = true;
       submitBtn.textContent = "Booking...";
       try {
@@ -316,12 +329,12 @@
         });
         var result = await res.json();
         card.remove();
-        if (result.reply) addBubble("bot", result.reply, true);
-        else addBubble("bot", "Something went wrong submitting that, please call us at " + PHONE + ".", true);
+        if (result.reply) addBubble("bot", result.reply);
+        else addBubble("bot", "Something went wrong submitting that, please call us at " + PHONE + ".");
       } catch (e) {
         submitBtn.disabled = false;
         submitBtn.textContent = "Book appointment";
-        addBubble("bot", "Could not connect, please try again or call " + PHONE + ".", true);
+        addBubble("bot", "Could not connect, please try again or call " + PHONE + ".");
       }
     });
   }
@@ -346,7 +359,7 @@
     var text = inputEl.value.trim();
     if (!text) return;
     inputEl.value = "";
-    addBubble("user", text, true);
+    addBubble("user", text);
     typingEl.style.display = "flex";
 
     try {
@@ -358,18 +371,18 @@
       var data = await res.json();
       typingEl.style.display = "none";
       if (data.reply) {
-        addBubble("bot", data.reply, true);
-        // THE FIX: open the form because the backend said to, not because
+        addBubble("bot", data.reply);
+        // Open the form because the backend said to, not because
         // we tried to guess it from the sentence the AI wrote.
         if (data.showForm) {
           showBookingForm(data.urgent, data.tradeGuess, data.serviceNeeded);
         }
       } else {
-        addBubble("bot", "Sorry, something went wrong. Please try again or call " + PHONE + ".", true);
+        addBubble("bot", "Sorry, something went wrong. Please try again or call " + PHONE + ".");
       }
     } catch (e) {
       typingEl.style.display = "none";
-      addBubble("bot", "Sorry, I could not connect. Please try again shortly.", true);
+      addBubble("bot", "Sorry, I could not connect. Please try again shortly.");
     }
   }
 
