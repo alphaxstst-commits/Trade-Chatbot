@@ -5,6 +5,7 @@ function freshState() {
   return {
     fullName: null,
     phone: null,
+    email: null,
     address: null,
     serviceNeeded: null,
     preferredDateTime: null,
