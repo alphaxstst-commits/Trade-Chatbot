@@ -31,20 +31,31 @@ async function appendToSheet(sheetId, values) {
 }
 
 /**
- * Wrapper for agent – saves an appointment
+ * Wrapper for agent – saves an appointment.
+ *
+ * Column order MUST match the "Appointments CRM" sheet headers exactly:
+ * A Timestamp | B Name | C Phone | D Email | E Address | F Service |
+ * G Priority | H Preferred Time | I Notes | J Source | K Status
  */
 async function saveAppointment(payload) {
+  const trade = payload.tradeGuess
+    ? String(payload.tradeGuess).charAt(0).toUpperCase() + String(payload.tradeGuess).slice(1)
+    : '';
+  const details = payload.serviceNeeded || '';
+  const service = trade && details ? `${trade} - ${details}` : trade || details;
+
   const row = [
-    new Date().toISOString(),
-    payload.fullName || '',
-    payload.phone || '',
-    payload.address || '',
-    payload.serviceNeeded || '',
-    payload.preferredDateTime || '',
-    payload.urgent ? 'URGENT' : 'normal',
-    payload.notes || '',
-    payload.channel || 'website',
-    'Pending confirmation',
+    new Date().toISOString(),                 // A Timestamp
+    payload.fullName || '',                   // B Name
+    payload.phone || '',                      // C Phone
+    payload.email || '',                      // D Email
+    payload.address || '',                    // E Address
+    service,                                  // F Service
+    payload.urgent ? 'URGENT' : 'normal',     // G Priority
+    payload.preferredDateTime || '',          // H Preferred Time
+    payload.notes || '',                      // I Notes
+    payload.channel || 'website',             // J Source
+    'Pending confirmation',                   // K Status
   ];
   return appendToSheet(process.env.APPOINTMENTS_SHEET_ID, row);
 }
