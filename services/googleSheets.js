@@ -11,14 +11,20 @@ const auth = new google.auth.JWT(
 const sheets = google.sheets({ version: 'v4', auth });
 
 /**
- * Append a row to a Google Sheet (original function)
+ * Append a row to a Google Sheet.
+ *
+ * valueInputOption:
+ *  - 'USER_ENTERED' (default, original behaviour): Sheets parses values like a typed
+ *    cell, so "Mon, Oct 12, 1:00 PM" becomes a date serial number like 46307.54167.
+ *  - 'RAW': values are stored exactly as sent (text stays text, phone numbers keep
+ *    leading zeros / "+"). Used for appointments and leads.
  */
-async function appendToSheet(sheetId, values) {
+async function appendToSheet(sheetId, values, valueInputOption = 'USER_ENTERED') {
   try {
     const request = {
       spreadsheetId: sheetId,
       range: 'A:Z',
-      valueInputOption: 'USER_ENTERED',
+      valueInputOption,
       insertDataOption: 'INSERT_ROWS',
       resource: { values: [values] },
     };
@@ -57,7 +63,7 @@ async function saveAppointment(payload) {
     payload.channel || 'website',             // J Source
     'Pending confirmation',                   // K Status
   ];
-  return appendToSheet(process.env.APPOINTMENTS_SHEET_ID, row);
+  return appendToSheet(process.env.APPOINTMENTS_SHEET_ID, row, 'RAW');
 }
 
 /**
@@ -73,7 +79,7 @@ async function saveLead(payload) {
     payload.channel || 'website',
     'New',
   ];
-  return appendToSheet(process.env.LEADS_SHEET_ID, row);
+  return appendToSheet(process.env.LEADS_SHEET_ID, row, 'RAW');
 }
 
 module.exports = { appendToSheet, saveAppointment, saveLead };
