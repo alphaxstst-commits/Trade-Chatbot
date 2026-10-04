@@ -11,50 +11,50 @@ const {
   buildGreeting,
 } = require("../knowledge/businessScript");
 
+// Runs both tasks, logs real failures, and never lets one failure block the other.
+// (appendToSheet returns Google's raw response and sendEmail returns nodemailer's
+// info object - neither has an `.ok` flag - so success = the promise resolved.)
+async function runSaveAndNotify(label, saveFn, emailFn, payload) {
+  const startedAt = Date.now();
+  console.log(`${label}: starting (channel=${payload.channel})`);
+
+  const [sheetResult, emailResult] = await Promise.allSettled([saveFn(payload), emailFn(payload)]);
+
+  console.log(
+    `${label}: finished in ${Date.now() - startedAt}ms, sheet=${sheetResult.status}, email=${emailResult.status}`
+  );
+  if (sheetResult.status === "rejected") console.error(`${label}: Sheets save failed`, sheetResult.reason);
+  if (emailResult.status === "rejected") console.error(`${label}: email send failed`, emailResult.reason);
+}
+
 async function persistAppointment(state) {
   const payload = {
     fullName: state.fullName,
     phone: state.phone,
+    email: state.email,
     address: state.address,
     serviceNeeded: state.serviceNeeded,
+    tradeGuess: state.tradeGuess,
     preferredDateTime: state.preferredDateTime,
     urgent: state.urgent,
     channel: state.channel || "website",
   };
-
-  const startedAt = Date.now();
-  console.log(`persistAppointment: starting (channel=${payload.channel})`);
-
-  const [sheetResult, emailResult] = await Promise.all([
-    saveAppointment(payload),
-    sendAppointmentEmail(payload),
-  ]);
-
-  console.log(`persistAppointment: finished in ${Date.now() - startedAt}ms, sheet.ok=${sheetResult.ok}, email.ok=${emailResult}`);
-
-  if (!sheetResult.ok) console.error("persistAppointment: Sheets save failed", sheetResult);
-  if (!emailResult) console.error("persistAppointment: email send failed");
+  await runSaveAndNotify("persistAppointment", saveAppointment, sendAppointmentEmail, payload);
 }
 
 async function persistLead(state) {
   const payload = {
     fullName: state.fullName,
     phone: state.phone,
+    email: state.email,
     serviceNeeded: state.serviceNeeded,
     channel: state.channel || "website",
   };
-
-  const [sheetResult, emailResult] = await Promise.all([
-    saveLead(payload),
-    sendLeadEmail(payload),
-  ]);
-
-  if (!sheetResult.ok) console.error("persistLead: Sheets save failed", sheetResult);
-  if (!emailResult) console.error("persistLead: email send failed");
+  await runSaveAndNotify("persistLead", saveLead, sendLeadEmail, payload);
 }
 
 function mergeExtracted(state, extracted) {
-  const fieldMap = ["fullName", "phone", "address", "serviceNeeded", "preferredDateTime"];
+  const fieldMap = ["fullName", "phone", "email", "address", "serviceNeeded", "preferredDateTime"];
   for (const f of fieldMap) {
     if (extracted[f] && typeof extracted[f] === "string" && extracted[f].trim()) {
       state[f] = extracted[f].trim();
@@ -140,6 +140,7 @@ async function submitBookingForm({ key, channel, formData }) {
 
   state.fullName = (formData.fullName || "").trim();
   state.phone = (formData.phone || "").trim();
+  state.email = (formData.email || "").trim();
   state.address = (formData.address || "").trim();
   state.serviceNeeded = (formData.serviceNeeded || "").trim();
   state.preferredDateTime = (formData.preferredDateTime || "").trim();
