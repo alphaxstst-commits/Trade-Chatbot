@@ -1,7 +1,7 @@
 // knowledge/businessScript.js
 const trades = require("./trades.json");
 
-const REQUIRED_BOOKING_FIELDS = ["fullName", "phone", "address", "serviceNeeded", "preferredDateTime"];
+const REQUIRED_BOOKING_FIELDS = ["fullName", "phone", "email", "address", "serviceNeeded", "preferredDateTime"];
 
 const COMPANY_NAME = process.env.BUSINESS_NAME || "Ironclad Home Services";
 const BOT_NAME = process.env.BOT_NAME || "Nova";
@@ -55,12 +55,15 @@ Today's date is ${todayStr}. Use this to resolve any relative or partial dates t
 {
   "fullName": string or null,
   "phone": string or null,
+  "email": string or null,
   "address": string or null,
   "serviceNeeded": string or null,
   "preferredDateTime": string or null,
   "wantsToBook": true | false | null,
   "tradeGuess": one of "hvac", "plumbing", "excavation", "electrical", "handyman", or null
 }
+
+For "email", only return an address that looks like a real email (text@domain.tld) exactly as the customer wrote it. If the message has no email address, return null. Never invent or guess one.
 
 If the latest message mentions a date and/or time for the appointment, normalize "preferredDateTime" into exactly one of these two formats, do not return the customer's raw wording:
 - If an exact time is given: "Ddd, Mon D, h:mm AM/PM" (example: "Fri, Sep 5, 11:00 AM")
@@ -73,6 +76,7 @@ ${JSON.stringify(
   {
     fullName: state.fullName,
     phone: state.phone,
+    email: state.email,
     address: state.address,
     serviceNeeded: state.serviceNeeded,
     preferredDateTime: state.preferredDateTime,
@@ -88,6 +92,7 @@ Latest customer message: "${latestMessage}"
 const FIELD_LABELS = {
   fullName: "Name",
   phone: "Phone",
+  email: "Email",
   address: "Address",
   serviceNeeded: "Service",
   preferredDateTime: "Preferred Date/Time",
